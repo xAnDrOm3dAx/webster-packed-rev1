@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+html {
+  font-size: 18px;
+}
+
 body {
   margin: 0;
+  color: #1e293b;
+  background-color: #f8fafc;
+}
+
+:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
