@@ -1,0 +1,1 @@
+read SPEC.md before making changes; all storage goes through repository.ts; do not add features not in the spec.
