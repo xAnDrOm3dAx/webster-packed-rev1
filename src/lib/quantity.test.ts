@@ -1,17 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatQuantity, splitQuantity } from './quantity';
-
-// Simulates the tap combine logic in QuantityStepper: a whole-number tap
-// keeps the current fraction, a fraction tap keeps the current whole number.
-function tapWhole(current: number, whole: number): number {
-  const { fraction } = splitQuantity(current);
-  return Math.round((whole + fraction) * 100) / 100;
-}
-
-function tapFraction(current: number, fraction: number): number {
-  const { whole } = splitQuantity(current);
-  return Math.round((whole + fraction) * 100) / 100;
-}
+import { formatQuantity, splitQuantity, tapFraction, tapWholeNumber } from './quantity';
 
 describe('formatQuantity', () => {
   it('formats a half tablet as ½', () => {
@@ -66,7 +54,7 @@ describe('splitQuantity', () => {
 describe('combining whole-number and fraction taps', () => {
   it('tapping 1 then ½ gives 1.5', () => {
     let value = 0;
-    value = tapWhole(value, 1);
+    value = tapWholeNumber(value, 1);
     expect(value).toBe(1);
     value = tapFraction(value, 0.5);
     expect(value).toBe(1.5);
@@ -76,20 +64,20 @@ describe('combining whole-number and fraction taps', () => {
     let value = 0;
     value = tapFraction(value, 0.5);
     expect(value).toBe(0.5);
-    value = tapWhole(value, 1);
+    value = tapWholeNumber(value, 1);
     expect(value).toBe(1.5);
   });
 
   it('tapping 2 then ¾ gives 2.75', () => {
     let value = 0;
-    value = tapWhole(value, 2);
+    value = tapWholeNumber(value, 2);
     value = tapFraction(value, 0.75);
     expect(value).toBe(2.75);
   });
 
   it('replacing the whole number keeps the existing fraction', () => {
     let value = 1.5;
-    value = tapWhole(value, 3);
+    value = tapWholeNumber(value, 3);
     expect(value).toBe(3.5);
   });
 
@@ -97,5 +85,20 @@ describe('combining whole-number and fraction taps', () => {
     let value = 2.25;
     value = tapFraction(value, 0.75);
     expect(value).toBe(2.75);
+  });
+});
+
+// Tapping a pressed button toggles it off instead of being a no-op.
+describe('toggling a pressed tap off', () => {
+  it('1.5, tap 1 -> 0.5 (whole number toggles off, fraction remains)', () => {
+    expect(tapWholeNumber(1.5, 1)).toBe(0.5);
+  });
+
+  it('1.5, tap ½ -> 1 (fraction toggles off, whole number remains)', () => {
+    expect(tapFraction(1.5, 0.5)).toBe(1);
+  });
+
+  it('0.5, tap ½ -> 0 (only pressed part, nothing left)', () => {
+    expect(tapFraction(0.5, 0.5)).toBe(0);
   });
 });

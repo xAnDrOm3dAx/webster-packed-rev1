@@ -39,7 +39,9 @@ export default function MedicationForm() {
   const [notFound, setNotFound] = useState(false);
   const [form, setForm] = useState<MedicationFormState>(defaultFormState());
   const [touched, setTouched] = useState(false);
+  const [failedSubmitCount, setFailedSubmitCount] = useState(0);
 
+  const summaryRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const dosesRef = useRef<HTMLDivElement>(null);
   const daysRef = useRef<HTMLDivElement>(null);
@@ -61,6 +63,13 @@ export default function MedicationForm() {
     setExisting(med);
     setForm(fromMedication(med));
   }, [id]);
+
+  // The error summary only enters the DOM once `touched` is true, so its ref
+  // isn't attached yet in the same event handler that fails validation.
+  // Focus it in an effect once that render has committed.
+  useEffect(() => {
+    if (failedSubmitCount > 0) summaryRef.current?.focus();
+  }, [failedSubmitCount]);
 
   if (isEditing && notFound) {
     return (
@@ -104,8 +113,7 @@ export default function MedicationForm() {
     setTouched(true);
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
-      const firstError = ERROR_FIELD_ORDER.find((f) => validationErrors[f.key]);
-      if (firstError) focusField(firstError.key);
+      setFailedSubmitCount((n) => n + 1);
       return;
     }
 
@@ -134,7 +142,8 @@ export default function MedicationForm() {
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         {touched && Object.keys(errors).length > 0 && (
           <div
-            role="alert"
+            ref={summaryRef}
+            tabIndex={-1}
             aria-labelledby="error-summary-heading"
             className="rounded-lg border-2 border-red-800 bg-red-50 p-4"
           >

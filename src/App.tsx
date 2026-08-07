@@ -6,7 +6,7 @@ function Stub({ title }: { title: string }) {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
       <h1 className="text-2xl font-semibold text-slate-800">{title}</h1>
-      <Link to="/medications" className="text-lg text-teal-700 underline">
+      <Link to="/medications" className="text-lg text-teal-800 underline">
         Go to medications
       </Link>
     </main>

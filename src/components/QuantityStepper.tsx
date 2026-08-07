@@ -1,4 +1,11 @@
-import { QUICK_FRACTIONS, QUICK_WHOLE_NUMBERS, formatQuantity, splitQuantity } from '../lib/quantity';
+import {
+  QUICK_FRACTIONS,
+  QUICK_WHOLE_NUMBERS,
+  formatQuantity,
+  splitQuantity,
+  tapFraction,
+  tapWholeNumber,
+} from '../lib/quantity';
 
 type Props = {
   id: string;
@@ -38,7 +45,7 @@ export function QuantityStepper({ id, label, value, onChange }: Props) {
             key={whole_}
             type="button"
             aria-pressed={whole === whole_}
-            onClick={() => onChange(Math.round((whole_ + fraction) * 100) / 100)}
+            onClick={() => onChange(tapWholeNumber(value, whole_))}
             className={tapButtonClass}
           >
             {formatQuantity(whole_)}
@@ -49,7 +56,7 @@ export function QuantityStepper({ id, label, value, onChange }: Props) {
             key={frac}
             type="button"
             aria-pressed={fraction === frac}
-            onClick={() => onChange(Math.round((whole + frac) * 100) / 100)}
+            onClick={() => onChange(tapFraction(value, frac))}
             className={tapButtonClass}
           >
             {formatQuantity(frac)}

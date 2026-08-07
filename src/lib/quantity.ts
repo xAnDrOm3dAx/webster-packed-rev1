@@ -19,6 +19,24 @@ export function splitQuantity(quantity: number): { whole: number; fraction: numb
   return { whole, fraction };
 }
 
+// Tapping a whole number combines with the existing fraction, unless that
+// whole number is already the pressed one, in which case it toggles off and
+// leaves just the fraction (1.5, tap 1 -> 0.5).
+export function tapWholeNumber(current: number, whole: number): number {
+  const parts = splitQuantity(current);
+  if (parts.whole === whole) return parts.fraction;
+  return Math.round((whole + parts.fraction) * 100) / 100;
+}
+
+// Tapping a fraction combines with the existing whole number, unless that
+// fraction is already the pressed one, in which case it toggles off and
+// leaves just the whole number (1.5, tap ½ -> 1).
+export function tapFraction(current: number, fraction: number): number {
+  const parts = splitQuantity(current);
+  if (parts.fraction === fraction) return parts.whole;
+  return Math.round((parts.whole + fraction) * 100) / 100;
+}
+
 export function formatQuantity(quantity: number): string {
   if (!Number.isFinite(quantity) || quantity <= 0) return '0';
 
