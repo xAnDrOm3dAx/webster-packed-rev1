@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { QuantityStepper } from '../components/QuantityStepper';
 import {
@@ -15,10 +15,20 @@ import {
   fromMedication,
   toMedicationInput,
   validateForm,
+  type MedicationFormErrors,
   type MedicationFormState,
 } from '../lib/medicationForm';
 import * as repo from '../storage/repository';
 import type { Medication, Weekday } from '../types';
+
+// Order matches the fields as they appear on the page, so both the error
+// summary and "jump to first error" focus follow the same reading order.
+const ERROR_FIELD_ORDER: { key: keyof MedicationFormErrors; href: string }[] = [
+  { key: 'name', href: '#name' },
+  { key: 'doses', href: '#doses' },
+  { key: 'days', href: '#days' },
+  { key: 'directions', href: '#directions' },
+];
 
 export default function MedicationForm() {
   const { id } = useParams<{ id?: string }>();
@@ -29,6 +39,17 @@ export default function MedicationForm() {
   const [notFound, setNotFound] = useState(false);
   const [form, setForm] = useState<MedicationFormState>(defaultFormState());
   const [touched, setTouched] = useState(false);
+
+  const nameRef = useRef<HTMLInputElement>(null);
+  const dosesRef = useRef<HTMLDivElement>(null);
+  const daysRef = useRef<HTMLDivElement>(null);
+  const directionsRef = useRef<HTMLTextAreaElement>(null);
+  const fieldRefs: Record<keyof MedicationFormErrors, React.RefObject<HTMLElement | null>> = {
+    name: nameRef,
+    doses: dosesRef,
+    days: daysRef,
+    directions: directionsRef,
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -45,7 +66,7 @@ export default function MedicationForm() {
     return (
       <main className="mx-auto max-w-2xl p-4">
         <p className="text-lg text-slate-700">That medication could not be found.</p>
-        <Link to="/medications" className="mt-4 inline-block text-lg text-teal-700 underline">
+        <Link to="/medications" className="mt-4 inline-block text-lg text-teal-800 underline">
           Back to medications
         </Link>
       </main>
@@ -58,6 +79,15 @@ export default function MedicationForm() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  // asNeeded and asDirected medications never go in the pack (SPEC.md section 5).
+  function updateScheduleType(value: MedicationFormState['scheduleType']) {
+    setForm((f) => ({
+      ...f,
+      scheduleType: value,
+      goesInPack: value === 'fixed' ? f.goesInPack : false,
+    }));
+  }
+
   function toggleDay(day: Weekday) {
     setForm((f) => ({
       ...f,
@@ -65,11 +95,19 @@ export default function MedicationForm() {
     }));
   }
 
+  function focusField(key: keyof MedicationFormErrors) {
+    fieldRefs[key].current?.focus();
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTouched(true);
     const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) return;
+    if (Object.keys(validationErrors).length > 0) {
+      const firstError = ERROR_FIELD_ORDER.find((f) => validationErrors[f.key]);
+      if (firstError) focusField(firstError.key);
+      return;
+    }
 
     const input = toMedicationInput(form);
     if (existing) {
@@ -94,12 +132,43 @@ export default function MedicationForm() {
       </h1>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+        {touched && Object.keys(errors).length > 0 && (
+          <div
+            role="alert"
+            aria-labelledby="error-summary-heading"
+            className="rounded-lg border-2 border-red-800 bg-red-50 p-4"
+          >
+            <p id="error-summary-heading" className="text-lg font-semibold text-red-900">
+              {Object.keys(errors).length === 1
+                ? 'There is 1 problem to fix'
+                : `There are ${Object.keys(errors).length} problems to fix`}
+            </p>
+            <ul className="mt-2 list-disc pl-5">
+              {ERROR_FIELD_ORDER.filter((f) => errors[f.key]).map((f) => (
+                <li key={f.key}>
+                  <a
+                    href={f.href}
+                    className="text-lg text-red-800 underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      focusField(f.key);
+                    }}
+                  >
+                    {errors[f.key]}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div>
           <label htmlFor="name" className="mb-1 block text-lg font-medium text-slate-800">
             Name
           </label>
           <input
             id="name"
+            ref={nameRef}
             type="text"
             value={form.name}
             onChange={(e) => update('name', e.target.value)}
@@ -109,7 +178,7 @@ export default function MedicationForm() {
             placeholder="Bisoprolol 5mg tablets"
           />
           {errors.name && (
-            <p id="name-error" className="mt-1 text-base text-red-700">
+            <p id="name-error" className="mt-1 text-base text-red-800">
               {errors.name}
             </p>
           )}
@@ -178,7 +247,7 @@ export default function MedicationForm() {
                 key={value}
                 type="button"
                 aria-pressed={form.scheduleType === value}
-                onClick={() => update('scheduleType', value)}
+                onClick={() => updateScheduleType(value)}
                 className="min-h-[56px] flex-1 rounded-md border border-slate-400 px-3 text-lg font-medium text-slate-800 aria-pressed:border-teal-700 aria-pressed:bg-teal-50 aria-pressed:text-teal-800"
               >
                 {label}
@@ -189,7 +258,7 @@ export default function MedicationForm() {
 
         {form.scheduleType === 'fixed' ? (
           <>
-            <div>
+            <div id="doses" ref={dosesRef} tabIndex={-1}>
               <p className="mb-2 text-lg font-medium text-slate-800">Dose per time of day</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {SLOTS.map((slot) => (
@@ -202,7 +271,7 @@ export default function MedicationForm() {
                   />
                 ))}
               </div>
-              {errors.doses && <p className="mt-1 text-base text-red-700">{errors.doses}</p>}
+              {errors.doses && <p className="mt-1 text-base text-red-800">{errors.doses}</p>}
             </div>
 
             <fieldset>
@@ -228,7 +297,7 @@ export default function MedicationForm() {
             </fieldset>
 
             {form.frequency === 'specificDays' && (
-              <div>
+              <div id="days" ref={daysRef} tabIndex={-1}>
                 <p className="mb-2 text-lg font-medium text-slate-800">Which days</p>
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAYS.map((day) => (
@@ -243,7 +312,7 @@ export default function MedicationForm() {
                     </button>
                   ))}
                 </div>
-                {errors.days && <p className="mt-1 text-base text-red-700">{errors.days}</p>}
+                {errors.days && <p className="mt-1 text-base text-red-800">{errors.days}</p>}
               </div>
             )}
           </>
@@ -254,6 +323,7 @@ export default function MedicationForm() {
             </label>
             <textarea
               id="directions"
+              ref={directionsRef}
               rows={4}
               value={form.directions}
               onChange={(e) => update('directions', e.target.value)}
@@ -263,29 +333,37 @@ export default function MedicationForm() {
               placeholder="Take as directed"
             />
             {errors.directions && (
-              <p id="directions-error" className="mt-1 text-base text-red-700">
+              <p id="directions-error" className="mt-1 text-base text-red-800">
                 {errors.directions}
               </p>
             )}
           </div>
         )}
 
-        <div className="flex min-h-[56px] items-center gap-3">
-          <input
-            id="goesInPack"
-            type="checkbox"
-            checked={form.goesInPack}
-            onChange={(e) => update('goesInPack', e.target.checked)}
-            className="h-7 w-7"
-          />
-          <label htmlFor="goesInPack" className="text-lg text-slate-800">
-            Goes in the pack
-          </label>
-        </div>
-        <p className="-mt-3 text-base text-slate-600">
-          Turn off for inhalers, injections, liquids, and anything else that isn't a tablet or
-          capsule sitting in the tray.
-        </p>
+        {form.scheduleType === 'fixed' ? (
+          <>
+            <div className="flex min-h-[56px] items-center gap-3">
+              <input
+                id="goesInPack"
+                type="checkbox"
+                checked={form.goesInPack}
+                onChange={(e) => update('goesInPack', e.target.checked)}
+                className="h-7 w-7"
+              />
+              <label htmlFor="goesInPack" className="text-lg text-slate-800">
+                Goes in the pack
+              </label>
+            </div>
+            <p className="-mt-3 text-base text-slate-700">
+              Turn off for inhalers, injections, liquids, and anything else that isn't a tablet or
+              capsule sitting in the tray.
+            </p>
+          </>
+        ) : (
+          <p className="text-base text-slate-700">
+            As-needed and as-directed medications are never packed into the tray.
+          </p>
+        )}
 
         <div>
           <label htmlFor="notes" className="mb-1 block text-lg font-medium text-slate-800">
@@ -304,7 +382,7 @@ export default function MedicationForm() {
         <div className="mt-2 flex flex-wrap gap-3">
           <button
             type="submit"
-            className="min-h-[56px] flex-1 rounded-md bg-teal-700 px-5 text-lg font-medium text-white"
+            className="min-h-[56px] flex-1 rounded-md bg-teal-800 px-5 text-lg font-medium text-white"
           >
             {isEditing ? 'Save changes' : 'Add medication'}
           </button>

@@ -99,12 +99,16 @@ export function validateForm(state: MedicationFormState): MedicationFormErrors {
 export function toMedicationInput(
   state: MedicationFormState,
 ): Omit<Medication, 'id' | 'active' | 'sortOrder'> {
+  // asNeeded and asDirected medications generate no compartments, so they
+  // never go in the pack (SPEC.md section 5, "when required" / "as directed").
+  const goesInPack = state.scheduleType === 'fixed' ? state.goesInPack : false;
+
   const base = {
     name: state.name.trim(),
     brandName: state.brandName.trim() || undefined,
     purpose: state.purpose.trim() || undefined,
     form: state.form,
-    goesInPack: state.goesInPack,
+    goesInPack,
     notes: state.notes.trim() || undefined,
   };
 

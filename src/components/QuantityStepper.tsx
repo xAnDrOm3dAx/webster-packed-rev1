@@ -1,4 +1,4 @@
-import { QUICK_FRACTIONS, formatQuantity } from '../lib/quantity';
+import { QUICK_FRACTIONS, QUICK_WHOLE_NUMBERS, formatQuantity, splitQuantity } from '../lib/quantity';
 
 type Props = {
   id: string;
@@ -7,7 +7,12 @@ type Props = {
   onChange: (value: number) => void;
 };
 
+const tapButtonClass =
+  'min-h-[56px] min-w-[56px] flex-1 rounded-md border border-slate-400 text-lg font-medium text-slate-800 aria-pressed:border-teal-700 aria-pressed:bg-teal-50 aria-pressed:text-teal-800';
+
 export function QuantityStepper({ id, label, value, onChange }: Props) {
+  const { whole, fraction } = splitQuantity(value);
+
   return (
     <div className="rounded-lg border border-slate-300 p-3">
       <label htmlFor={id} className="mb-2 block text-lg font-medium text-slate-800">
@@ -28,13 +33,24 @@ export function QuantityStepper({ id, label, value, onChange }: Props) {
         className="mb-2 h-14 w-full rounded-md border border-slate-400 px-3 text-lg text-slate-900"
       />
       <div className="flex flex-wrap gap-2">
+        {QUICK_WHOLE_NUMBERS.map((whole_) => (
+          <button
+            key={whole_}
+            type="button"
+            aria-pressed={whole === whole_}
+            onClick={() => onChange(Math.round((whole_ + fraction) * 100) / 100)}
+            className={tapButtonClass}
+          >
+            {formatQuantity(whole_)}
+          </button>
+        ))}
         {QUICK_FRACTIONS.map((frac) => (
           <button
             key={frac}
             type="button"
-            aria-pressed={value === frac}
-            onClick={() => onChange(frac)}
-            className="min-h-[56px] min-w-[56px] flex-1 rounded-md border border-slate-400 text-lg font-medium text-slate-800 aria-pressed:border-teal-700 aria-pressed:bg-teal-50 aria-pressed:text-teal-800"
+            aria-pressed={fraction === frac}
+            onClick={() => onChange(Math.round((whole + frac) * 100) / 100)}
+            className={tapButtonClass}
           >
             {formatQuantity(frac)}
           </button>

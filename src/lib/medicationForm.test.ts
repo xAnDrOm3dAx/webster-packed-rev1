@@ -97,6 +97,18 @@ describe('section 5: when required (PRN)', () => {
     expect(med.frequency).toBeUndefined();
     expect(med.directions).toBe('Take 2 tablets once each day when required');
   });
+
+  it('forces goesInPack to false for a tablet, even if the checkbox was left on', () => {
+    const s = state({
+      name: 'Bumetanide 1mg tablets',
+      form: 'tablet',
+      scheduleType: 'asNeeded',
+      directions: 'Take 2 tablets once each day when required',
+      goesInPack: true,
+    });
+    const med = toMedicationInput(s);
+    expect(med.goesInPack).toBe(false);
+  });
 });
 
 describe('section 5: once weekly, specific day', () => {
@@ -136,6 +148,18 @@ describe('section 5: free text with no dose', () => {
     expect(med.scheduleType).toBe('asDirected');
     expect(med.doses).toBeUndefined();
     expect(med.directions).toBe('Take as directed');
+  });
+
+  it('forces goesInPack to false for a tablet, even if the checkbox was left on', () => {
+    const s = state({
+      name: 'Warfarin tablets',
+      form: 'tablet',
+      scheduleType: 'asDirected',
+      directions: 'Take as directed',
+      goesInPack: true,
+    });
+    const med = toMedicationInput(s);
+    expect(med.goesInPack).toBe(false);
   });
 });
 

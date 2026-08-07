@@ -24,13 +24,13 @@ function MedicationCard({
       <div className="flex items-start justify-between gap-3 p-4">
         <Link to={`/medications/${med.id}`} className="min-w-0 flex-1">
           <div className="text-2xl font-semibold text-slate-900">{med.name}</div>
-          {med.brandName && <div className="text-lg text-slate-600">{med.brandName}</div>}
+          {med.brandName && <div className="text-lg text-slate-700">{med.brandName}</div>}
           <div className="mt-2 flex flex-wrap gap-2 text-base">
             <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
               {MEDICATION_FORM_LABELS[med.form]}
             </span>
             {!med.goesInPack && (
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800">
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-900">
                 Not packed
               </span>
             )}
@@ -86,7 +86,7 @@ export default function MedicationsList() {
         <h1 className="text-2xl font-semibold text-slate-900">Medications</h1>
         <Link
           to="/medications/new"
-          className="flex min-h-[56px] items-center justify-center rounded-md bg-teal-700 px-5 text-lg font-medium text-white"
+          className="flex min-h-[56px] items-center justify-center rounded-md bg-teal-800 px-5 text-lg font-medium text-white"
         >
           Add medication
         </Link>
@@ -97,7 +97,7 @@ export default function MedicationsList() {
           <p className="mb-4 text-lg text-slate-700">No medications yet.</p>
           <Link
             to="/medications/new"
-            className="inline-flex min-h-[56px] items-center rounded-md bg-teal-700 px-5 text-lg font-medium text-white"
+            className="inline-flex min-h-[56px] items-center rounded-md bg-teal-800 px-5 text-lg font-medium text-white"
           >
             Add the first medication
           </Link>

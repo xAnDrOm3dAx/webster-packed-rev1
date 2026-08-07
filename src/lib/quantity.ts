@@ -9,6 +9,16 @@ const FRACTION_GLYPHS: Record<number, string> = {
 
 export const QUICK_FRACTIONS = [0.25, 0.5, 0.75] as const;
 
+export const QUICK_WHOLE_NUMBERS = [1, 2, 3] as const;
+
+// Splits a quantity into its whole and fractional parts so whole-number and
+// fraction taps can be combined (tap 1, then ½, gives 1.5 — SPEC.md section 5).
+export function splitQuantity(quantity: number): { whole: number; fraction: number } {
+  const whole = Math.floor(quantity);
+  const fraction = Math.round((quantity - whole) * 100) / 100;
+  return { whole, fraction };
+}
+
 export function formatQuantity(quantity: number): string {
   if (!Number.isFinite(quantity) || quantity <= 0) return '0';
 
