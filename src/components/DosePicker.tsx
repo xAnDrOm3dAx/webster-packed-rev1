@@ -13,6 +13,13 @@ type Props = {
   ariaLabel: string;
 };
 
+// Which control last set the whole-tablets count: one of the fixed
+// buttons, or the custom field. The two must never show as selected at
+// once, so this can't be inferred from the numeric value alone (see DOSE
+// ENTRY REVISION 2, FIX 1) — typing "3" into the custom field must not
+// also light up the fixed "3" button.
+type WholeSource = 'fixed' | 'custom';
+
 // Selected buttons must be distinguishable by more than colour: a filled
 // background, bold text, and a thicker border (see DOSE ENTRY spec,
 // "SELECTED STATE").
@@ -48,29 +55,40 @@ export function DosePicker({ value, onChange, ariaLabel }: Props) {
 
   // The last slot in the whole-tablets row is a custom number input (whole
   // numbers only, capped at CUSTOM_WHOLE_MAX) rather than a fixed "5"
-  // button, so doses above 4 tablets can still be entered. Its text is
+  // button, so doses above 4 tablets can still be entered. customText is
   // local: it only needs to track what's been typed, and is cleared
   // whenever a fixed button (or Clear) is pressed instead.
+  const [wholeSource, setWholeSource] = useState<WholeSource>(() => (whole > 4 ? 'custom' : 'fixed'));
   const [customText, setCustomText] = useState<string>(() => (whole > 4 ? String(whole) : ''));
-  const customSelected = whole > 4;
 
   function selectWhole(option: number) {
+    setWholeSource('fixed');
     setCustomText('');
     onChange(combineDose(option, fraction));
   }
 
   function handleCustomChange(e: ChangeEvent<HTMLInputElement>) {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+
     if (digits === '') {
+      // Emptying the field must clear the whole-tablets count too, so the
+      // stored dose never disagrees with what the field displays (DOSE
+      // ENTRY REVISION 2, FIX 2).
+      setWholeSource('custom');
       setCustomText('');
+      onChange(combineDose(0, fraction));
       return;
     }
+
     if (Number(digits) > CUSTOM_WHOLE_MAX) return;
+
+    setWholeSource('custom');
     setCustomText(digits);
     onChange(combineDose(Number(digits), fraction));
   }
 
   function handleClear() {
+    setWholeSource('fixed');
     setCustomText('');
     onChange(0);
   }
@@ -80,8 +98,12 @@ export function DosePicker({ value, onChange, ariaLabel }: Props) {
       <p className="mb-1.5 text-base font-medium text-slate-700">Whole tablets</p>
       <div className="mb-3 flex gap-2" role="group" aria-label={`${ariaLabel}: whole tablets`}>
         {WHOLE_TABLET_OPTIONS.map((option) => (
-          <DoseButton key={option} pressed={whole === option} onClick={() => selectWhole(option)}>
-            {option === 0 ? 'None' : option}
+          <DoseButton
+            key={option}
+            pressed={wholeSource === 'fixed' && whole === option}
+            onClick={() => selectWhole(option)}
+          >
+            {option}
           </DoseButton>
         ))}
         <input
@@ -94,7 +116,7 @@ export function DosePicker({ value, onChange, ariaLabel }: Props) {
           aria-label={`${ariaLabel}: custom whole tablets, up to ${CUSTOM_WHOLE_MAX}`}
           className={
             customInputClass +
-            (customSelected
+            (wholeSource === 'custom'
               ? ' border-slate-900 border-4 bg-teal-800 font-bold text-white placeholder:text-white'
               : ' border-slate-400 text-slate-800 placeholder:text-slate-500')
           }

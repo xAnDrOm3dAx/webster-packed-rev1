@@ -86,7 +86,7 @@ describe('DoseTimeList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
 
     expect(screen.getByRole('button', { name: /Morning.*Not given/ })).toBeInTheDocument();
-    expect(within(wholeGroup).getByRole('button', { name: 'None' })).toHaveAttribute(
+    expect(within(wholeGroup).getByRole('button', { name: '0' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
