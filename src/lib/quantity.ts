@@ -9,8 +9,10 @@ const FRACTION_GLYPHS: Record<number, string> = {
   0.75: '¾',
 };
 
-// Dose picker: whole tablets row.
-export const WHOLE_TABLET_OPTIONS = [0, 1, 2, 3, 4, 5] as const;
+// Dose picker: whole tablets row. The remaining slot in that row is a
+// custom number input, capped at CUSTOM_WHOLE_MAX.
+export const WHOLE_TABLET_OPTIONS = [0, 1, 2, 3, 4] as const;
+export const CUSTOM_WHOLE_MAX = 10;
 
 // Dose picker: part tablet row.
 export const DOSE_PART_OPTIONS = [
