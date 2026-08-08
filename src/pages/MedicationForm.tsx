@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { QuantityStepper } from '../components/QuantityStepper';
+import { DosePicker } from '../components/DosePicker';
 import {
   DEFAULT_SLOT_LABELS,
   MEDICATION_FORMS,
@@ -271,7 +271,7 @@ export default function MedicationForm() {
               <p className="mb-2 text-lg font-medium text-slate-800">Dose per time of day</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {SLOTS.map((slot) => (
-                  <QuantityStepper
+                  <DosePicker
                     key={slot}
                     id={`dose-${slot}`}
                     label={DEFAULT_SLOT_LABELS[slot]}

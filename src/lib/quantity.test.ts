@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { formatQuantity, splitQuantity, tapFraction, tapWholeNumber } from './quantity';
+import {
+  clearDose,
+  combineDose,
+  formatDoseText,
+  formatQuantity,
+  matchingMainOption,
+  selectDose,
+  splitQuantity,
+} from './quantity';
 
 describe('formatQuantity', () => {
   it('formats a half tablet as ½', () => {
@@ -49,56 +57,92 @@ describe('splitQuantity', () => {
   });
 });
 
-// SPEC.md section 5: "Entry form offers ¼, ½, ¾ as taps, plus whole numbers."
-// A whole-number tap and a fraction tap must combine rather than overwrite.
-describe('combining whole-number and fraction taps', () => {
-  it('tapping 1 then ½ gives 1.5', () => {
-    let value = 0;
-    value = tapWholeNumber(value, 1);
-    expect(value).toBe(1);
-    value = tapFraction(value, 0.5);
-    expect(value).toBe(1.5);
+// DOSE ENTRY — REVISED: "plain English" read-only display for each
+// time-of-day box.
+describe('formatDoseText', () => {
+  it('shows "Not given" for zero', () => {
+    expect(formatDoseText(0)).toBe('Not given');
   });
 
-  it('tapping ½ then 1 also gives 1.5', () => {
-    let value = 0;
-    value = tapFraction(value, 0.5);
-    expect(value).toBe(0.5);
-    value = tapWholeNumber(value, 1);
-    expect(value).toBe(1.5);
+  it('shows a single whole tablet in the singular', () => {
+    expect(formatDoseText(1)).toBe('1 tablet');
   });
 
-  it('tapping 2 then ¾ gives 2.75', () => {
-    let value = 0;
-    value = tapWholeNumber(value, 2);
-    value = tapFraction(value, 0.75);
-    expect(value).toBe(2.75);
+  it('shows multiple whole tablets in the plural', () => {
+    expect(formatDoseText(2)).toBe('2 tablets');
+    expect(formatDoseText(3)).toBe('3 tablets');
   });
 
-  it('replacing the whole number keeps the existing fraction', () => {
-    let value = 1.5;
-    value = tapWholeNumber(value, 3);
-    expect(value).toBe(3.5);
+  it('shows a fraction alone as "a tablet"', () => {
+    expect(formatDoseText(0.5)).toBe('½ a tablet');
+    expect(formatDoseText(0.25)).toBe('¼ a tablet');
   });
 
-  it('replacing the fraction keeps the existing whole number', () => {
-    let value = 2.25;
-    value = tapFraction(value, 0.75);
-    expect(value).toBe(2.75);
+  it('shows a whole number plus a fraction, pluralised', () => {
+    expect(formatDoseText(1.5)).toBe('1½ tablets');
+    expect(formatDoseText(2.5)).toBe('2½ tablets');
+  });
+
+  it('treats negative or non-finite values as "Not given"', () => {
+    expect(formatDoseText(-1)).toBe('Not given');
+    expect(formatDoseText(NaN)).toBe('Not given');
   });
 });
 
-// Tapping a pressed button toggles it off instead of being a no-op.
-describe('toggling a pressed tap off', () => {
-  it('1.5, tap 1 -> 0.5 (whole number toggles off, fraction remains)', () => {
-    expect(tapWholeNumber(1.5, 1)).toBe(0.5);
+// DOSE ENTRY — REVISED: the picker is single-select. Tapping a button SETS
+// the dose; it never adds to or subtracts from the current value.
+describe('selectDose', () => {
+  it('tapping a dose button sets that exact value, with no accumulation', () => {
+    expect(selectDose(2, 0.5)).toBe(0.5);
+    expect(selectDose(0, 3)).toBe(3);
+    expect(selectDose(1.5, 2.5)).toBe(2.5);
   });
 
-  it('1.5, tap ½ -> 1 (fraction toggles off, whole number remains)', () => {
-    expect(tapFraction(1.5, 0.5)).toBe(1);
+  it('tapping the same button twice leaves the value unchanged', () => {
+    expect(selectDose(1.5, 1.5)).toBe(1.5);
+  });
+});
+
+describe('clearDose', () => {
+  it('returns the value to 0', () => {
+    expect(clearDose()).toBe(0);
+  });
+});
+
+// DOSE ENTRY — REVISED: "Other…" panel combines a whole-tablets row and a
+// part-tablet row into one dose.
+describe('combineDose', () => {
+  it('combines whole=3 and part=¾ into 3.75', () => {
+    expect(combineDose(3, 0.75)).toBe(3.75);
+    expect(formatDoseText(combineDose(3, 0.75))).toBe('3¾ tablets');
   });
 
-  it('0.5, tap ½ -> 0 (only pressed part, nothing left)', () => {
-    expect(tapFraction(0.5, 0.5)).toBe(0);
+  it('combines whole=0 and part=0 into 0 ("Not given")', () => {
+    expect(combineDose(0, 0)).toBe(0);
+    expect(formatDoseText(combineDose(0, 0))).toBe('Not given');
+  });
+
+  it('combines whole=5 and part=¼ into 5.25', () => {
+    expect(combineDose(5, 0.25)).toBe(5.25);
+  });
+});
+
+// DOSE ENTRY — REVISED: a dose set via "Other…" that doesn't match one of
+// the six main buttons must not show any main button selected.
+describe('matchingMainOption', () => {
+  it('matches an exact main-button value', () => {
+    expect(matchingMainOption(0.5)).toBe(0.5);
+    expect(matchingMainOption(1)).toBe(1);
+    expect(matchingMainOption(1.5)).toBe(1.5);
+    expect(matchingMainOption(3)).toBe(3);
+  });
+
+  it('a stored value of 0.25 matches no main button — "Other…" is selected instead, not ¼ + 1', () => {
+    expect(matchingMainOption(0.25)).toBeNull();
+    expect(splitQuantity(0.25)).toEqual({ whole: 0, fraction: 0.25 });
+  });
+
+  it('zero matches no main button', () => {
+    expect(matchingMainOption(0)).toBeNull();
   });
 });
