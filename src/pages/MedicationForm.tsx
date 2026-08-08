@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { DosePicker } from '../components/DosePicker';
+import { DoseTimeList } from '../components/DoseTimeList';
 import {
-  DEFAULT_SLOT_LABELS,
   MEDICATION_FORMS,
   MEDICATION_FORM_LABELS,
-  SLOTS,
   WEEKDAYS,
   WEEKDAY_LABELS,
 } from '../lib/constants';
@@ -269,17 +267,10 @@ export default function MedicationForm() {
           <>
             <div id="doses" ref={dosesRef} tabIndex={-1}>
               <p className="mb-2 text-lg font-medium text-slate-800">Dose per time of day</p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {SLOTS.map((slot) => (
-                  <DosePicker
-                    key={slot}
-                    id={`dose-${slot}`}
-                    label={DEFAULT_SLOT_LABELS[slot]}
-                    value={form.doses[slot]}
-                    onChange={(v) => update('doses', { ...form.doses, [slot]: v })}
-                  />
-                ))}
-              </div>
+              <DoseTimeList
+                doses={form.doses}
+                onChange={(slot, v) => update('doses', { ...form.doses, [slot]: v })}
+              />
               {errors.doses && <p className="mt-1 text-base text-red-800">{errors.doses}</p>}
             </div>
 

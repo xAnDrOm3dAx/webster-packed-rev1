@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  clearDose,
-  combineDose,
-  formatDoseText,
-  formatQuantity,
-  matchingMainOption,
-  selectDose,
-  splitQuantity,
-} from './quantity';
+import { combineDose, formatDoseText, formatQuantity, splitQuantity } from './quantity';
 
 describe('formatQuantity', () => {
   it('formats a half tablet as ½', () => {
@@ -52,6 +44,7 @@ describe('splitQuantity', () => {
   it('splits a value into whole and fraction parts', () => {
     expect(splitQuantity(1.5)).toEqual({ whole: 1, fraction: 0.5 });
     expect(splitQuantity(0.5)).toEqual({ whole: 0, fraction: 0.5 });
+    expect(splitQuantity(0.25)).toEqual({ whole: 0, fraction: 0.25 });
     expect(splitQuantity(2)).toEqual({ whole: 2, fraction: 0 });
     expect(splitQuantity(0)).toEqual({ whole: 0, fraction: 0 });
   });
@@ -89,28 +82,8 @@ describe('formatDoseText', () => {
   });
 });
 
-// DOSE ENTRY — REVISED: the picker is single-select. Tapping a button SETS
-// the dose; it never adds to or subtracts from the current value.
-describe('selectDose', () => {
-  it('tapping a dose button sets that exact value, with no accumulation', () => {
-    expect(selectDose(2, 0.5)).toBe(0.5);
-    expect(selectDose(0, 3)).toBe(3);
-    expect(selectDose(1.5, 2.5)).toBe(2.5);
-  });
-
-  it('tapping the same button twice leaves the value unchanged', () => {
-    expect(selectDose(1.5, 1.5)).toBe(1.5);
-  });
-});
-
-describe('clearDose', () => {
-  it('returns the value to 0', () => {
-    expect(clearDose()).toBe(0);
-  });
-});
-
-// DOSE ENTRY — REVISED: "Other…" panel combines a whole-tablets row and a
-// part-tablet row into one dose.
+// DOSE ENTRY — REVISION 2: the dose picker combines a whole-tablets row and
+// a part-tablet row into one dose.
 describe('combineDose', () => {
   it('combines whole=3 and part=¾ into 3.75', () => {
     expect(combineDose(3, 0.75)).toBe(3.75);
@@ -127,22 +100,3 @@ describe('combineDose', () => {
   });
 });
 
-// DOSE ENTRY — REVISED: a dose set via "Other…" that doesn't match one of
-// the six main buttons must not show any main button selected.
-describe('matchingMainOption', () => {
-  it('matches an exact main-button value', () => {
-    expect(matchingMainOption(0.5)).toBe(0.5);
-    expect(matchingMainOption(1)).toBe(1);
-    expect(matchingMainOption(1.5)).toBe(1.5);
-    expect(matchingMainOption(3)).toBe(3);
-  });
-
-  it('a stored value of 0.25 matches no main button — "Other…" is selected instead, not ¼ + 1', () => {
-    expect(matchingMainOption(0.25)).toBeNull();
-    expect(splitQuantity(0.25)).toEqual({ whole: 0, fraction: 0.25 });
-  });
-
-  it('zero matches no main button', () => {
-    expect(matchingMainOption(0)).toBeNull();
-  });
-});

@@ -1,0 +1,98 @@
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { useState } from 'react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { emptyDoses } from '../lib/medicationForm';
+import type { Slot } from '../types';
+import { DoseTimeList } from './DoseTimeList';
+
+afterEach(cleanup);
+
+// Lifts state the way MedicationForm does, so DoseTimeList is exercised
+// against the real dose logic (splitQuantity/combineDose/formatDoseText),
+// not a copy or a mock.
+function Harness() {
+  const [doses, setDoses] = useState(emptyDoses());
+  return (
+    <DoseTimeList
+      doses={doses}
+      onChange={(slot: Slot, value: number) => setDoses((d) => ({ ...d, [slot]: value }))}
+    />
+  );
+}
+
+describe('DoseTimeList', () => {
+  it('renders all four rows collapsed on initial render', () => {
+    render(<Harness />);
+
+    const rows = screen.getAllByRole('button', { expanded: false });
+    expect(rows).toHaveLength(4);
+    expect(screen.getByRole('button', { name: /Morning.*Not given/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Noon.*Not given/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Evening.*Not given/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Night.*Not given/ })).toBeInTheDocument();
+  });
+
+  it('expanding a second row collapses the first', () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    expect(screen.getByRole('button', { name: /Morning/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('group', { name: 'Morning: whole tablets' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Noon/ }));
+    expect(screen.getByRole('button', { name: /Morning/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: /Noon/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.queryByRole('group', { name: 'Morning: whole tablets' })).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Noon: whole tablets' })).toBeInTheDocument();
+  });
+
+  it('tapping the header of an expanded row collapses it', () => {
+    render(<Harness />);
+
+    const morningHeader = screen.getByRole('button', { name: /Morning/ });
+    fireEvent.click(morningHeader);
+    expect(morningHeader).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(morningHeader);
+    expect(morningHeader).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('group', { name: 'Morning: whole tablets' })).not.toBeInTheDocument();
+  });
+
+  it('setting whole=2 with part unchanged at None produces 2 / "2 tablets"', () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    const wholeGroup = screen.getByRole('group', { name: 'Morning: whole tablets' });
+    fireEvent.click(within(wholeGroup).getByRole('button', { name: '2' }));
+
+    expect(screen.getByRole('button', { name: /Morning.*2 tablets/ })).toBeInTheDocument();
+    const partGroup = screen.getByRole('group', { name: 'Morning: part tablet' });
+    expect(within(partGroup).getByRole('button', { name: 'None' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('clear returns whole=0, part=None, "Not given"', () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    const wholeGroup = screen.getByRole('group', { name: 'Morning: whole tablets' });
+    const partGroup = screen.getByRole('group', { name: 'Morning: part tablet' });
+    fireEvent.click(within(wholeGroup).getByRole('button', { name: '2' }));
+    fireEvent.click(within(partGroup).getByRole('button', { name: '½' }));
+    expect(screen.getByRole('button', { name: /Morning.*2½ tablets/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+
+    expect(screen.getByRole('button', { name: /Morning.*Not given/ })).toBeInTheDocument();
+    expect(within(wholeGroup).getByRole('button', { name: '0' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(partGroup).getByRole('button', { name: 'None' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+});
