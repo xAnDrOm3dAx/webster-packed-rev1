@@ -11,6 +11,8 @@ import {
   defaultFormState,
   defaultGoesInPack,
   fromMedication,
+  goesInPackLocked,
+  isTabletForm,
   toMedicationInput,
   validateForm,
   type MedicationFormErrors,
@@ -270,6 +272,7 @@ export default function MedicationForm() {
               <DoseTimeList
                 doses={form.doses}
                 onChange={(slot, v) => update('doses', { ...form.doses, [slot]: v })}
+                variant={isTabletForm(form.form) ? 'tablet' : 'freeText'}
               />
               {errors.doses && <p className="mt-1 text-base text-red-800">{errors.doses}</p>}
             </div>
@@ -346,17 +349,19 @@ export default function MedicationForm() {
               <input
                 id="goesInPack"
                 type="checkbox"
-                checked={form.goesInPack}
+                checked={goesInPackLocked(form.form) ? false : form.goesInPack}
+                disabled={goesInPackLocked(form.form)}
                 onChange={(e) => update('goesInPack', e.target.checked)}
-                className="h-7 w-7"
+                className="h-7 w-7 disabled:opacity-50"
               />
               <label htmlFor="goesInPack" className="text-lg text-slate-800">
                 Goes in the pack
               </label>
             </div>
             <p className="-mt-3 text-base text-slate-700">
-              Turn off for inhalers, injections, liquids, and anything else that isn't a tablet or
-              capsule sitting in the tray.
+              {goesInPackLocked(form.form)
+                ? 'Off automatically — injections, inhalers, and liquids never go in the pack.'
+                : "Turn off for anything that isn't a tablet or capsule sitting in the tray."}
             </p>
           </>
         ) : (

@@ -1,19 +1,25 @@
 import { useState } from 'react';
 import { DEFAULT_SLOT_LABELS, SLOTS } from '../lib/constants';
-import { formatDoseText } from '../lib/quantity';
+import { formatDoseText, formatFreeDoseText } from '../lib/quantity';
 import type { Slot } from '../types';
 import { DosePicker } from './DosePicker';
+import { FreeDoseInput } from './FreeDoseInput';
 
 type Props = {
   doses: Record<Slot, number>;
   onChange: (slot: Slot, value: number) => void;
+  // 'tablet' shows the whole/part-tablet button picker; 'freeText' shows a
+  // plain amount field instead, for forms that aren't measured in tablets
+  // (SPEC.md section 5, "Not a tablet"). Defaults to 'tablet'.
+  variant?: 'tablet' | 'freeText';
 };
 
 // One time-of-day box is open at a time (DOSE ENTRY spec, "LAYOUT: ONE TIME
 // OF DAY OPEN AT A TIME"). All four rows start collapsed; expanding one
 // collapses whatever else was open.
-export function DoseTimeList({ doses, onChange }: Props) {
+export function DoseTimeList({ doses, onChange, variant = 'tablet' }: Props) {
   const [expanded, setExpanded] = useState<Slot | null>(null);
+  const formatText = variant === 'tablet' ? formatDoseText : formatFreeDoseText;
 
   return (
     <div className="flex flex-col gap-2">
@@ -27,7 +33,7 @@ export function DoseTimeList({ doses, onChange }: Props) {
               type="button"
               aria-expanded={isExpanded}
               aria-controls={panelId}
-              aria-label={`${DEFAULT_SLOT_LABELS[slot]}, ${formatDoseText(doses[slot])}`}
+              aria-label={`${DEFAULT_SLOT_LABELS[slot]}, ${formatText(doses[slot])}`}
               onClick={() => setExpanded((current) => (current === slot ? null : slot))}
               className="flex min-h-[56px] w-full items-center justify-between gap-3 px-4 text-lg"
             >
@@ -35,15 +41,23 @@ export function DoseTimeList({ doses, onChange }: Props) {
                 {DEFAULT_SLOT_LABELS[slot]}
               </span>
               <span className="text-slate-700" aria-hidden="true">
-                {formatDoseText(doses[slot])}
+                {formatText(doses[slot])}
               </span>
             </button>
             <div id={panelId} hidden={!isExpanded} className="border-t border-slate-300 p-3">
-              <DosePicker
-                value={doses[slot]}
-                onChange={(v) => onChange(slot, v)}
-                ariaLabel={DEFAULT_SLOT_LABELS[slot]}
-              />
+              {variant === 'tablet' ? (
+                <DosePicker
+                  value={doses[slot]}
+                  onChange={(v) => onChange(slot, v)}
+                  ariaLabel={DEFAULT_SLOT_LABELS[slot]}
+                />
+              ) : (
+                <FreeDoseInput
+                  value={doses[slot]}
+                  onChange={(v) => onChange(slot, v)}
+                  ariaLabel={DEFAULT_SLOT_LABELS[slot]}
+                />
+              )}
             </div>
           </div>
         );

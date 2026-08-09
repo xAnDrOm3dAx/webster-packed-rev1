@@ -63,6 +63,14 @@ export function formatDoseText(quantity: number): string {
   return glyph ? `${whole}${glyph} tablets` : `${formatQuantity(quantity)} tablets`;
 }
 
+// Plain-number dose text for non-tablet forms (injections, inhalers,
+// liquids, other) — just the amount, with none of the "tablet"/"a tablet"
+// wording, since the unit isn't a tablet (SPEC.md section 5, "Not a tablet").
+export function formatFreeDoseText(quantity: number): string {
+  if (!Number.isFinite(quantity) || quantity <= 0) return 'Not given';
+  return formatQuantity(quantity);
+}
+
 // Combines the whole-tablets row and part-tablet row into one dose, e.g.
 // whole=3, part=0.75 -> 3.75.
 export function combineDose(whole: number, part: number): number {

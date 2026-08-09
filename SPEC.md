@@ -133,6 +133,11 @@ These come from a real hospital outpatient medication record and every one of th
 
 **The consistent rule:** if the app isn't certain something belongs in a compartment, it doesn't create a compartment. Under-filling the grid is safe; over-filling it is not.
 
+**Note on the medication form itself (not just the downstream pack):** the `form` field should also change how the medication form behaves while it's being entered, not only what happens once it's saved.
+
+- For `injection`, `inhaler`, and `liquid`, `goesInPack` is forced to `false` and the checkbox is disabled — the person entering the medication can't turn it back on. `other` is left as a free choice, since it might still be something that gets packed (a patch, a sachet).
+- For any form other than `tablet` or `capsule`, the dose-per-time-of-day entry should not use "whole tablets / part tablet" language or the tablet tap buttons — those don't mean anything for a liquid or an injection. At minimum, swap in a plain free-text amount field instead.
+
 ---
 
 ## 6. Screens

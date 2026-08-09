@@ -23,10 +23,26 @@ export type MedicationFormState = {
   notes: string;
 };
 
+// Whether a form is measured in whole/part tablets, as opposed to a plain
+// amount (SPEC.md section 5, "Not a tablet").
+export function isTabletForm(form: MedicationFormType): boolean {
+  return form === 'tablet' || form === 'capsule';
+}
+
+// Forms the spec is explicit never go in the pack (SPEC.md section 4:
+// "goesInPack: false for inhalers, injections, liquids"). 'other' is left
+// as a user choice, since it might still be something that gets packed
+// (a patch, a sachet) — unlike these three, which never are.
+const NEVER_PACKED_FORMS: MedicationFormType[] = ['injection', 'inhaler', 'liquid'];
+
+export function goesInPackLocked(form: MedicationFormType): boolean {
+  return NEVER_PACKED_FORMS.includes(form);
+}
+
 // Tablets and capsules go in the pack by default; everything else (inhalers,
 // injections, liquids, other) does not (SPEC.md section 5, "Not a tablet").
 export function defaultGoesInPack(form: MedicationFormType): boolean {
-  return form === 'tablet' || form === 'capsule';
+  return isTabletForm(form);
 }
 
 export function emptyDoses(): Record<Slot, number> {
@@ -101,7 +117,10 @@ export function toMedicationInput(
 ): Omit<Medication, 'id' | 'active' | 'sortOrder'> {
   // asNeeded and asDirected medications generate no compartments, so they
   // never go in the pack (SPEC.md section 5, "when required" / "as directed").
-  const goesInPack = state.scheduleType === 'fixed' ? state.goesInPack : false;
+  // Injections, inhalers, and liquids never go in the pack either, regardless
+  // of what the (disabled) checkbox happens to hold.
+  const goesInPack =
+    state.scheduleType === 'fixed' ? state.goesInPack && !goesInPackLocked(state.form) : false;
 
   const base = {
     name: state.name.trim(),

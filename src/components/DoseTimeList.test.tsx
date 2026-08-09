@@ -10,12 +10,13 @@ afterEach(cleanup);
 // Lifts state the way MedicationForm does, so DoseTimeList is exercised
 // against the real dose logic (splitQuantity/combineDose/formatDoseText),
 // not a copy or a mock.
-function Harness() {
+function Harness({ variant }: { variant?: 'tablet' | 'freeText' } = {}) {
   const [doses, setDoses] = useState(emptyDoses());
   return (
     <DoseTimeList
       doses={doses}
       onChange={(slot: Slot, value: number) => setDoses((d) => ({ ...d, [slot]: value }))}
+      variant={variant}
     />
   );
 }
@@ -115,5 +116,36 @@ describe('DoseTimeList', () => {
       'aria-pressed',
       'false',
     );
+  });
+});
+
+// The medication's Form field (tablet/capsule vs injection/inhaler/liquid/
+// other) decides which dose control shows up, not just whether it goes in
+// the pack — see the note added to SPEC.md section 5.
+describe('DoseTimeList freeText variant (non-tablet forms)', () => {
+  it('shows a plain amount field instead of the whole/part-tablet picker', () => {
+    render(<Harness variant="freeText" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+
+    expect(screen.queryByRole('group', { name: 'Morning: whole tablets' })).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Morning: dose' })).toBeInTheDocument();
+  });
+
+  it('stores a typed amount and displays it without tablet wording', () => {
+    render(<Harness variant="freeText" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Morning: dose' }), {
+      target: { value: '5' },
+    });
+
+    expect(screen.getByRole('button', { name: 'Morning, 5' })).toBeInTheDocument();
+  });
+
+  it('shows "Not given" for a zero dose, same as the tablet variant', () => {
+    render(<Harness variant="freeText" />);
+
+    expect(screen.getByRole('button', { name: /Morning.*Not given/ })).toBeInTheDocument();
   });
 });

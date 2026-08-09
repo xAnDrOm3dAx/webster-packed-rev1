@@ -6,6 +6,8 @@ import {
   defaultGoesInPack,
   doseSummary,
   frequencySummary,
+  goesInPackLocked,
+  isTabletForm,
   toMedicationInput,
   validateForm,
   type MedicationFormState,
@@ -170,6 +172,46 @@ describe('section 5: not a tablet', () => {
     expect(defaultGoesInPack('other')).toBe(false);
     expect(defaultGoesInPack('tablet')).toBe(true);
     expect(defaultGoesInPack('capsule')).toBe(true);
+  });
+
+  it('is measured in tablets only for tablet and capsule forms', () => {
+    expect(isTabletForm('tablet')).toBe(true);
+    expect(isTabletForm('capsule')).toBe(true);
+    expect(isTabletForm('inhaler')).toBe(false);
+    expect(isTabletForm('injection')).toBe(false);
+    expect(isTabletForm('liquid')).toBe(false);
+    expect(isTabletForm('other')).toBe(false);
+  });
+
+  it('locks goesInPack off for injections, inhalers, and liquids, but not other', () => {
+    expect(goesInPackLocked('injection')).toBe(true);
+    expect(goesInPackLocked('inhaler')).toBe(true);
+    expect(goesInPackLocked('liquid')).toBe(true);
+    expect(goesInPackLocked('other')).toBe(false);
+    expect(goesInPackLocked('tablet')).toBe(false);
+    expect(goesInPackLocked('capsule')).toBe(false);
+  });
+
+  it('forces goesInPack to false for an injection even if the form state says true', () => {
+    const s = state({
+      name: 'Methotrexate 10mg injection',
+      form: 'injection',
+      goesInPack: true,
+      doses: { morning: 0, noon: 0, evening: 0, night: 1 },
+    });
+    const med = toMedicationInput(s);
+    expect(med.goesInPack).toBe(false);
+  });
+
+  it('does not lock goesInPack for the "other" form', () => {
+    const s = state({
+      name: 'Medicated patch',
+      form: 'other',
+      goesInPack: true,
+      doses: { morning: 1, noon: 0, evening: 0, night: 0 },
+    });
+    const med = toMedicationInput(s);
+    expect(med.goesInPack).toBe(true);
   });
 });
 
