@@ -166,4 +166,39 @@ describe('DosePicker custom whole-tablets input', () => {
     expect(screen.getAllByRole('button', { name: 'None' })).toHaveLength(1);
     expect(within(partGroup()).getByRole('button', { name: 'None' })).toBeInTheDocument();
   });
+
+  // POLISH 1: an empty custom field must not read as selected, even though
+  // wholeSource is still 'custom' at that point (FIX 2).
+  it('drops the selected styling from the custom field once it is emptied', () => {
+    render(<Harness />);
+
+    fireEvent.change(customInput(), { target: { value: '7' } });
+    expect(customInput()).toHaveClass('bg-teal-800');
+
+    fireEvent.change(customInput(), { target: { value: '' } });
+
+    expect(customInput()).not.toHaveClass('bg-teal-800');
+    expect(customInput()).toHaveClass('border-slate-400');
+  });
+
+  // POLISH 2: pasting a value over the cap must reject the entry outright,
+  // not silently truncate it to something that looks valid.
+  it('rejects pasting "100" into an empty custom field, leaving it empty and the dose at 0', () => {
+    render(<Harness />);
+
+    fireEvent.change(customInput(), { target: { value: '100' } });
+
+    expect(customInput()).toHaveValue('');
+    expect(screen.getByText('Not given')).toBeInTheDocument();
+  });
+
+  it('rejects pasting "100" over an existing "3", leaving it at "3" and the dose at 3', () => {
+    render(<Harness />);
+
+    fireEvent.change(customInput(), { target: { value: '3' } });
+    fireEvent.change(customInput(), { target: { value: '100' } });
+
+    expect(customInput()).toHaveValue('3');
+    expect(screen.getByText('3 tablets')).toBeInTheDocument();
+  });
 });

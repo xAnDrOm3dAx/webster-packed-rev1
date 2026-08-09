@@ -95,4 +95,25 @@ describe('DoseTimeList', () => {
       'true',
     );
   });
+
+  // POLISH 3: wholeSource/customText must survive the picker being
+  // collapsed and re-expanded, so a dose entered via the custom field
+  // doesn't reappear looking like it was entered via a fixed button.
+  it('preserves the custom field across a row collapsing and re-expanding', () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    const wholeGroup = () => screen.getByRole('group', { name: 'Morning: whole tablets' });
+    fireEvent.change(within(wholeGroup()).getByRole('textbox'), { target: { value: '3' } });
+    expect(screen.getByRole('button', { name: /Morning.*3 tablets/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+
+    expect(within(wholeGroup()).getByRole('textbox')).toHaveValue('3');
+    expect(within(wholeGroup()).getByRole('button', { name: '3' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
 });

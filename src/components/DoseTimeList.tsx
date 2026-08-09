@@ -38,15 +38,13 @@ export function DoseTimeList({ doses, onChange }: Props) {
                 {formatDoseText(doses[slot])}
               </span>
             </button>
-            {isExpanded && (
-              <div id={panelId} className="border-t border-slate-300 p-3">
-                <DosePicker
-                  value={doses[slot]}
-                  onChange={(v) => onChange(slot, v)}
-                  ariaLabel={DEFAULT_SLOT_LABELS[slot]}
-                />
-              </div>
-            )}
+            <div id={panelId} hidden={!isExpanded} className="border-t border-slate-300 p-3">
+              <DosePicker
+                value={doses[slot]}
+                onChange={(v) => onChange(slot, v)}
+                ariaLabel={DEFAULT_SLOT_LABELS[slot]}
+              />
+            </div>
           </div>
         );
       })}

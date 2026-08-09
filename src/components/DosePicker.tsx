@@ -68,7 +68,7 @@ export function DosePicker({ value, onChange, ariaLabel }: Props) {
   }
 
   function handleCustomChange(e: ChangeEvent<HTMLInputElement>) {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+    const digits = e.target.value.replace(/\D/g, '');
 
     if (digits === '') {
       // Emptying the field must clear the whole-tablets count too, so the
@@ -116,7 +116,7 @@ export function DosePicker({ value, onChange, ariaLabel }: Props) {
           aria-label={`${ariaLabel}: custom whole tablets, up to ${CUSTOM_WHOLE_MAX}`}
           className={
             customInputClass +
-            (wholeSource === 'custom'
+            (wholeSource === 'custom' && customText !== ''
               ? ' border-slate-900 border-4 bg-teal-800 font-bold text-white placeholder:text-white'
               : ' border-slate-400 text-slate-800 placeholder:text-slate-500')
           }
