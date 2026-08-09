@@ -9,6 +9,11 @@ const FRACTION_GLYPHS: Record<number, string> = {
   0.75: '¾',
 };
 
+// The word the picker and the read-out use for a whole unit — "tablet" or
+// "capsule", matching the medication's Form field. Both pluralise by just
+// adding "s", so no separate plural table is needed.
+export type TabletUnit = 'tablet' | 'capsule';
+
 // Dose picker: whole tablets row. The remaining slot in that row is a
 // custom number input, capped at CUSTOM_WHOLE_MAX.
 export const WHOLE_TABLET_OPTIONS = [0, 1, 2, 3, 4] as const;
@@ -45,22 +50,23 @@ export function formatQuantity(quantity: number): string {
 }
 
 // Plain-English dose text for the read-only display, e.g. "1 tablet",
-// "½ a tablet", "1½ tablets", "Not given" for zero.
-export function formatDoseText(quantity: number): string {
+// "½ a tablet", "1½ tablets", "Not given" for zero. `unit` swaps the word
+// for "capsule" when that's the medication's form.
+export function formatDoseText(quantity: number, unit: TabletUnit = 'tablet'): string {
   if (!Number.isFinite(quantity) || quantity <= 0) return 'Not given';
 
   const { whole, fraction } = splitQuantity(quantity);
   const glyph = FRACTION_GLYPHS[fraction];
 
   if (whole === 0) {
-    return glyph ? `${glyph} a tablet` : `${formatQuantity(quantity)} of a tablet`;
+    return glyph ? `${glyph} a ${unit}` : `${formatQuantity(quantity)} of a ${unit}`;
   }
 
   if (fraction === 0) {
-    return whole === 1 ? '1 tablet' : `${whole} tablets`;
+    return whole === 1 ? `1 ${unit}` : `${whole} ${unit}s`;
   }
 
-  return glyph ? `${whole}${glyph} tablets` : `${formatQuantity(quantity)} tablets`;
+  return glyph ? `${whole}${glyph} ${unit}s` : `${formatQuantity(quantity)} ${unit}s`;
 }
 
 // Plain-number dose text for non-tablet forms (injections, inhalers,

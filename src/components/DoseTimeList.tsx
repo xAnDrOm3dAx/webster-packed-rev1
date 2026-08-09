@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DEFAULT_SLOT_LABELS, SLOTS } from '../lib/constants';
-import { formatDoseText, formatFreeDoseText } from '../lib/quantity';
+import { formatDoseText, formatFreeDoseText, type TabletUnit } from '../lib/quantity';
 import type { Slot } from '../types';
 import { DosePicker } from './DosePicker';
 import { FreeDoseInput } from './FreeDoseInput';
@@ -12,14 +12,18 @@ type Props = {
   // plain amount field instead, for forms that aren't measured in tablets
   // (SPEC.md section 5, "Not a tablet"). Defaults to 'tablet'.
   variant?: 'tablet' | 'freeText';
+  // Only used when variant is 'tablet': "tablet" or "capsule", matching the
+  // medication's Form field. Defaults to "tablet".
+  unit?: TabletUnit;
 };
 
 // One time-of-day box is open at a time (DOSE ENTRY spec, "LAYOUT: ONE TIME
 // OF DAY OPEN AT A TIME"). All four rows start collapsed; expanding one
 // collapses whatever else was open.
-export function DoseTimeList({ doses, onChange, variant = 'tablet' }: Props) {
+export function DoseTimeList({ doses, onChange, variant = 'tablet', unit = 'tablet' }: Props) {
   const [expanded, setExpanded] = useState<Slot | null>(null);
-  const formatText = variant === 'tablet' ? formatDoseText : formatFreeDoseText;
+  const formatText =
+    variant === 'tablet' ? (q: number) => formatDoseText(q, unit) : formatFreeDoseText;
 
   return (
     <div className="flex flex-col gap-2">
@@ -50,6 +54,7 @@ export function DoseTimeList({ doses, onChange, variant = 'tablet' }: Props) {
                   value={doses[slot]}
                   onChange={(v) => onChange(slot, v)}
                   ariaLabel={DEFAULT_SLOT_LABELS[slot]}
+                  unit={unit}
                 />
               ) : (
                 <FreeDoseInput

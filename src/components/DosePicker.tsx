@@ -5,12 +5,16 @@ import {
   WHOLE_TABLET_OPTIONS,
   combineDose,
   splitQuantity,
+  type TabletUnit,
 } from '../lib/quantity';
 
 type Props = {
   value: number;
   onChange: (value: number) => void;
   ariaLabel: string;
+  // "tablet" or "capsule", matching the medication's Form field. Defaults
+  // to "tablet" for callers that don't care (e.g. tests).
+  unit?: TabletUnit;
 };
 
 // Which control last set the whole-tablets count: one of the fixed
@@ -50,7 +54,7 @@ function DoseButton({
 // subtracts from the current value. The current value is always derived
 // from `value` via splitQuantity, so loading a stored dose preselects both
 // rows automatically.
-export function DosePicker({ value, onChange, ariaLabel }: Props) {
+export function DosePicker({ value, onChange, ariaLabel, unit = 'tablet' }: Props) {
   const { whole, fraction } = splitQuantity(value);
 
   // The last slot in the whole-tablets row is a custom number input (whole
@@ -95,8 +99,8 @@ export function DosePicker({ value, onChange, ariaLabel }: Props) {
 
   return (
     <div>
-      <p className="mb-1.5 text-base font-medium text-slate-700">Whole tablets</p>
-      <div className="mb-3 flex gap-2" role="group" aria-label={`${ariaLabel}: whole tablets`}>
+      <p className="mb-1.5 text-base font-medium text-slate-700">Whole {unit}s</p>
+      <div className="mb-3 flex gap-2" role="group" aria-label={`${ariaLabel}: whole ${unit}s`}>
         {WHOLE_TABLET_OPTIONS.map((option) => (
           <DoseButton
             key={option}
@@ -113,7 +117,7 @@ export function DosePicker({ value, onChange, ariaLabel }: Props) {
           value={customText}
           onChange={handleCustomChange}
           placeholder="Custom"
-          aria-label={`${ariaLabel}: custom whole tablets, up to ${CUSTOM_WHOLE_MAX}`}
+          aria-label={`${ariaLabel}: custom whole ${unit}s, up to ${CUSTOM_WHOLE_MAX}`}
           className={
             customInputClass +
             (wholeSource === 'custom' && customText !== ''
@@ -123,8 +127,8 @@ export function DosePicker({ value, onChange, ariaLabel }: Props) {
         />
       </div>
 
-      <p className="mb-1.5 text-base font-medium text-slate-700">Part tablet</p>
-      <div className="flex gap-2" role="group" aria-label={`${ariaLabel}: part tablet`}>
+      <p className="mb-1.5 text-base font-medium text-slate-700">Part {unit}</p>
+      <div className="flex gap-2" role="group" aria-label={`${ariaLabel}: part ${unit}`}>
         {DOSE_PART_OPTIONS.map((part) => (
           <DoseButton
             key={part.value}

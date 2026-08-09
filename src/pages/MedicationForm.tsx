@@ -273,6 +273,7 @@ export default function MedicationForm() {
                 doses={form.doses}
                 onChange={(slot, v) => update('doses', { ...form.doses, [slot]: v })}
                 variant={isTabletForm(form.form) ? 'tablet' : 'freeText'}
+                unit={form.form === 'capsule' ? 'capsule' : 'tablet'}
               />
               {errors.doses && <p className="mt-1 text-base text-red-800">{errors.doses}</p>}
             </div>

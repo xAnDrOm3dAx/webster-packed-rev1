@@ -10,13 +10,17 @@ afterEach(cleanup);
 // Lifts state the way MedicationForm does, so DoseTimeList is exercised
 // against the real dose logic (splitQuantity/combineDose/formatDoseText),
 // not a copy or a mock.
-function Harness({ variant }: { variant?: 'tablet' | 'freeText' } = {}) {
+function Harness({
+  variant,
+  unit,
+}: { variant?: 'tablet' | 'freeText'; unit?: 'tablet' | 'capsule' } = {}) {
   const [doses, setDoses] = useState(emptyDoses());
   return (
     <DoseTimeList
       doses={doses}
       onChange={(slot: Slot, value: number) => setDoses((d) => ({ ...d, [slot]: value }))}
       variant={variant}
+      unit={unit}
     />
   );
 }
@@ -147,5 +151,31 @@ describe('DoseTimeList freeText variant (non-tablet forms)', () => {
     render(<Harness variant="freeText" />);
 
     expect(screen.getByRole('button', { name: /Morning.*Not given/ })).toBeInTheDocument();
+  });
+});
+
+// The Form field ('tablet' vs 'capsule') must reach both the collapsed
+// read-out and the picker inside the panel — a prop that isn't forwarded
+// all the way down is exactly what let this regress before.
+describe('DoseTimeList unit wording (tablet vs capsule)', () => {
+  it('labels the picker rows and read-out "capsule" when unit is capsule', () => {
+    render(<Harness unit="capsule" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    expect(screen.getByRole('group', { name: 'Morning: whole capsules' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Morning: part capsule' })).toBeInTheDocument();
+
+    const wholeGroup = screen.getByRole('group', { name: 'Morning: whole capsules' });
+    fireEvent.click(within(wholeGroup).getByRole('button', { name: '2' }));
+
+    expect(screen.getByRole('button', { name: /Morning.*2 capsules/ })).toBeInTheDocument();
+    expect(screen.queryByText(/2 tablets/)).not.toBeInTheDocument();
+  });
+
+  it('defaults to "tablet" wording when unit is not given', () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    expect(screen.getByRole('group', { name: 'Morning: whole tablets' })).toBeInTheDocument();
   });
 });
