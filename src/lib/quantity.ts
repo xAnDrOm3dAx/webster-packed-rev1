@@ -74,11 +74,13 @@ export function formatDoseText(quantity: number, unit: TabletUnit = 'tablet'): s
 }
 
 // Plain-number dose text for non-tablet forms (injections, inhalers,
-// liquids, other) — just the amount, with none of the "tablet"/"a tablet"
-// wording, since the unit isn't a tablet (SPEC.md section 5, "Not a tablet").
+// liquids, other) — just the amount, rounded to 2 decimal places with no
+// trailing zeros, and none of the "tablet"/"a tablet" wording or fraction
+// glyphs from formatQuantity: "2½" means nothing for a 2.5ml liquid dose
+// (SPEC.md section 5, "Not a tablet").
 export function formatFreeDoseText(quantity: number): string {
   if (!Number.isFinite(quantity) || quantity <= 0) return 'Not given';
-  return formatQuantity(quantity);
+  return String(Math.round(quantity * 100) / 100);
 }
 
 // Combines the whole-tablets row and part-tablet row into one dose, e.g.

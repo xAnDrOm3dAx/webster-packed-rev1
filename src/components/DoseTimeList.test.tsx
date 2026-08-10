@@ -152,6 +152,21 @@ describe('DoseTimeList freeText variant (non-tablet forms)', () => {
 
     expect(screen.getByRole('button', { name: /Morning.*Not given/ })).toBeInTheDocument();
   });
+
+  // FREE DOSE TEXT — FIX: a decimal amount must show as a plain number,
+  // never a tablet fraction glyph — "2.5", not "2½".
+  it('shows a decimal dose as a plain number, with no ½ character', () => {
+    render(<Harness variant="freeText" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Morning: dose' }), {
+      target: { value: '2.5' },
+    });
+
+    const row = screen.getByRole('button', { name: /Morning/ });
+    expect(row).toHaveTextContent('2.5');
+    expect(row.textContent).not.toContain('½');
+  });
 });
 
 // The Form field ('tablet' vs 'capsule') must reach both the collapsed

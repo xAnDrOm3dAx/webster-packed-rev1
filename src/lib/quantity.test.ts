@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { combineDose, formatDoseText, formatQuantity, splitQuantity } from './quantity';
+import {
+  combineDose,
+  formatDoseText,
+  formatFreeDoseText,
+  formatQuantity,
+  splitQuantity,
+} from './quantity';
 
 describe('formatQuantity', () => {
   it('formats a half tablet as ½', () => {
@@ -97,6 +103,31 @@ describe('combineDose', () => {
 
   it('combines whole=5 and part=¼ into 5.25', () => {
     expect(combineDose(5, 0.25)).toBe(5.25);
+  });
+});
+
+// FREE DOSE TEXT — FIX: non-tablet forms must never show tablet fraction
+// glyphs (½, ¼, ¾) — a 2.5ml liquid dose is not "2½".
+describe('formatFreeDoseText', () => {
+  it('shows the plain number, not a fraction glyph', () => {
+    expect(formatFreeDoseText(2.5)).toBe('2.5');
+    expect(formatFreeDoseText(0.5)).toBe('0.5');
+    expect(formatFreeDoseText(1.25)).toBe('1.25');
+    expect(formatFreeDoseText(0.75)).toBe('0.75');
+  });
+
+  it('shows a whole number with no decimal point', () => {
+    expect(formatFreeDoseText(7)).toBe('7');
+  });
+
+  it('rounds to two decimal places', () => {
+    expect(formatFreeDoseText(3.33)).toBe('3.33');
+  });
+
+  it('shows "Not given" for zero or non-finite values', () => {
+    expect(formatFreeDoseText(0)).toBe('Not given');
+    expect(formatFreeDoseText(-1)).toBe('Not given');
+    expect(formatFreeDoseText(NaN)).toBe('Not given');
   });
 });
 
