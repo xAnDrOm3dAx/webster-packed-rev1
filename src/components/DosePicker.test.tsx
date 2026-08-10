@@ -202,3 +202,27 @@ describe('DosePicker custom whole-tablets input', () => {
     expect(screen.getByText('3 tablets')).toBeInTheDocument();
   });
 });
+
+// The old additive picker toggled a tapped value off when it was already
+// part of the dose: at 1½, tapping "1" removed the whole tablet and left
+// 0.5. That silent halving is the reason this picker sets rather than
+// toggles (SPEC.md §7, "Why the dose picker works this way"). This test
+// exists to keep the spec's account of it true.
+describe('DosePicker regression: tapping sets, never toggles', () => {
+  it('leaves a 1½ dose unchanged when the already-selected whole-tablet "1" is tapped', () => {
+    render(<Harness initialValue={1.5} />);
+
+    const wholeOne = within(wholeGroup()).getByRole('button', { name: '1' });
+    expect(screen.getByText('1½ tablets')).toBeInTheDocument();
+    expect(wholeOne).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(wholeOne);
+
+    expect(screen.getByText('1½ tablets')).toBeInTheDocument();
+    expect(screen.queryByText('½ a tablet')).not.toBeInTheDocument();
+    expect(within(wholeGroup()).getByRole('button', { name: '1' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+});

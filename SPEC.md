@@ -199,6 +199,28 @@ Every tap writes straight to storage. Closing the browser, the tablet sleeping, 
 - A zero dose reads as "Not given".
 - The word "tablet" swaps to "capsule" when the form is a capsule.
 
+#### Why the dose picker works this way
+
+The picker was rebuilt twice during milestone 2 (the working notes called them "DOSE ENTRY — REVISED" and "DOSE ENTRY — REVISION 2" — the names the code comments still cite). Those notes only ever existed in chat, so the reasoning is written down here.
+
+**Tapping sets the dose; it never toggles it off.** The first build used additive toggle buttons — 1, 2, 3, ¼, ½, ¾, Clear — where tapping a button already contributing to the dose subtracted it again. With a dose of 1½, tapping "1" left ½ behind. The old code said so plainly: *"it toggles off and leaves just the fraction (1.5, tap 1 -> 0.5)."*
+
+That is the fault worth understanding. A stray second tap silently reduced a dose, and the result looked completely normal afterwards — ½ a tablet is a perfectly ordinary dose, so nothing on screen said anything was wrong. A person with a tremor, which §8 assumes, produces stray second taps. Single-select removes the whole class of error: a tap always names the dose that results, tapping the selected button again does nothing, and Clear is the only way to take a dose away. Removing a dose is now a deliberate act rather than a slip.
+
+The same reasoning drives two smaller rules. The value display is read-only text and not a number field, so the dose can only ever be what the buttons say it is; and the field and the stored dose must never disagree — emptying the custom field sets that dose to zero rather than leaving the previous value stored behind an empty box. (Reasoning reconstructed from session transcript; original rationale not recorded.)
+
+**Whole tablets: fixed taps 0–4, then a capped custom field.** The whole-tablets row has to fit on one line at the target tablet width without wrapping, which allows about six controls. Doses above four whole tablets exist but are rare, so spending five of the six slots on 5, 6, 7, 8, 9 would waste the row on cases almost nobody enters. Slots one to five are the common values 0–4; the sixth is a "Custom" field, whole numbers only, for the rare higher dose. (Reasoning reconstructed from session transcript; original rationale not recorded.)
+
+**On the ceiling of 10.** The custom field is capped at 10 whole tablets, making 10¾ the largest dose per time of day. This was set as a bound on a typed field, not derived from any clinical limit, and the reason for 10 rather than some other number was never recorded — treat it as an arbitrary guard rail. If a real prescription needs more, raise `CUSTOM_WHOLE_MAX` deliberately and note the reason here; do not work around it in the calling code. Non-tablet forms use a separate free-text amount capped at 999 for the same reason: a typed field with no bound accepts a slipped keystroke as a real dose. (Reasoning reconstructed from session transcript; original rationale not recorded.)
+
+The highest single dose observed in the real hospital medication record this spec was built against is 3 tablets, so the ceiling has a wide margin. This is an observation, not a clinical limit.
+
+**One time of day open at a time.** Four expanded pickers, each two rows of buttons, pushes the save button off screen and makes it easy to set Evening's dose while looking at Morning's heading. Collapsed rows read as a summary — the time of day on the left, the dose in plain English on the right — so all four doses can be checked at a glance without opening anything. Nothing is auto-expanded on load, including Morning: an expanded row invites a tap, and the first dose entered should be one the person chose. (Reasoning reconstructed from session transcript; original rationale not recorded.)
+
+**Selected state must survive poor colour vision and poor light.** Selection shows as filled background, bold text, and a thicker border together — never colour alone. An earlier version added a checkmark instead, but it clipped against short labels ("✓ None"), so the border replaced it. For the same audience reasons, dose buttons are 56×56px per §8; when the row cannot fit at that size it wraps to a second line. Buttons never shrink below the minimum to save space.
+
+**Plain English, and no tablet glyphs where there are no tablets.** Doses read as "1 tablet", "½ a tablet", "1½ tablets", and "Not given" for zero — "Not given" rather than "0" because zero is a real instruction here, not an empty field. (Reasoning reconstructed from session transcript; original rationale not recorded.) The fraction glyphs are for tablets only: a 2.5ml liquid dose reads "2.5", never "2½", because a liquid has no such thing as a half-tablet and the glyph would import tablet language into a form that has none.
+
 ---
 
 ## 8. Design and accessibility
