@@ -138,6 +138,11 @@ These come from a real hospital outpatient medication record and every one of th
 - For `injection`, `inhaler`, and `liquid`, `goesInPack` is forced to `false` and the checkbox is disabled — the person entering the medication can't turn it back on. `other` is left as a free choice, since it might still be something that gets packed (a patch, a sachet).
 - For any form other than `tablet` or `capsule`, the dose-per-time-of-day entry should not use "whole tablets / part tablet" language or the tablet tap buttons — those don't mean anything for a liquid or an injection. A plain free-text amount field is used instead.
 - **Decided:** the free-text amount stays a bare number — no unit field is added to the data model. The medication name and notes carry the unit (e.g. "Amoxicillin 250mg/5ml suspension", note "Give 5ml"). This is safe to leave as-is because non-tablet forms are `goesInPack: false` and never generate a compartment, so the packing screen never has to interpret this number on its own.
+- Changing Form between a tablet form (tablet, capsule) and a non-tablet form
+resets all four doses to 0. The number means something different on each
+side: 250 is a plausible dose in ml, never in tablets. Each side's ceiling
+is only checked as the person types, so a value carried across would arrive
+unchecked. Changing form within one side keeps the doses.
 
 ---
 
@@ -334,3 +339,9 @@ Since this is a first run, a few things that help:
 - Encryption at rest
 - Installable app (PWA) with offline support
 - Scanning a medication record to prefill the list — if this is ever built, it must require the person to confirm every extracted line before anything reaches a pack list
+- Dose validation in the data layer. The tablet ceiling (CUSTOM_WHOLE_MAX)
+  and the non-tablet ceiling (FREE_DOSE_MAX) are enforced only by the entry
+  controls as the person types. toMedicationInput and repository.ts do not
+  check them. This is safe while the form is the only way in, but §10's
+  Import reads a JSON file straight into storage — a hand-edited or corrupted
+  file would arrive unchecked. Validate at the data layer before Import ships.
