@@ -28,10 +28,10 @@ type WholeSource = 'fixed' | 'custom';
 // background, bold text, and a thicker border (see DOSE ENTRY spec,
 // "SELECTED STATE").
 const doseButtonClass =
-  'flex min-h-[48px] min-w-[48px] flex-1 items-center justify-center rounded-md border-2 border-slate-400 px-1 text-base font-medium text-slate-800 aria-pressed:border-4 aria-pressed:border-slate-900 aria-pressed:bg-teal-800 aria-pressed:font-bold aria-pressed:text-white';
+  'flex min-h-[56px] min-w-[56px] flex-1 items-center justify-center rounded-md border-2 border-slate-400 px-1 text-base font-medium text-slate-800 aria-pressed:border-4 aria-pressed:border-slate-900 aria-pressed:bg-teal-800 aria-pressed:font-bold aria-pressed:text-white';
 
 const customInputClass =
-  'flex min-h-[48px] min-w-[48px] flex-1 items-center justify-center rounded-md border-2 px-1 text-center text-base font-medium';
+  'flex min-h-[56px] min-w-[56px] flex-1 items-center justify-center rounded-md border-2 px-1 text-center text-base font-medium';
 
 function DoseButton({
   pressed,
@@ -100,7 +100,7 @@ export function DosePicker({ value, onChange, ariaLabel, unit = 'tablet' }: Prop
   return (
     <div>
       <p className="mb-1.5 text-base font-medium text-slate-700">Whole {unit}s</p>
-      <div className="mb-3 flex gap-2" role="group" aria-label={`${ariaLabel}: whole ${unit}s`}>
+      <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label={`${ariaLabel}: whole ${unit}s`}>
         {WHOLE_TABLET_OPTIONS.map((option) => (
           <DoseButton
             key={option}
@@ -128,7 +128,7 @@ export function DosePicker({ value, onChange, ariaLabel, unit = 'tablet' }: Prop
       </div>
 
       <p className="mb-1.5 text-base font-medium text-slate-700">Part {unit}</p>
-      <div className="flex gap-2" role="group" aria-label={`${ariaLabel}: part ${unit}`}>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={`${ariaLabel}: part ${unit}`}>
         {DOSE_PART_OPTIONS.map((part) => (
           <DoseButton
             key={part.value}
@@ -141,7 +141,7 @@ export function DosePicker({ value, onChange, ariaLabel, unit = 'tablet' }: Prop
         <button
           type="button"
           onClick={handleClear}
-          className="flex min-h-[48px] min-w-[48px] flex-1 items-center justify-center rounded-md border-2 border-slate-400 px-1 text-base font-medium text-slate-800"
+          className="flex min-h-[56px] min-w-[56px] flex-1 items-center justify-center rounded-md border-2 border-slate-400 px-1 text-base font-medium text-slate-800"
         >
           Clear
         </button>

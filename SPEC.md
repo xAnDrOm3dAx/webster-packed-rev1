@@ -41,7 +41,7 @@ The app is a **checklist for a physical task**. It must never behave like it kno
 - **Vite + React + TypeScript**
 - **Tailwind CSS**
 - **localStorage** for persistence, accessed only through a single `storage/repository.ts` module
-- **Vitest** for tests
+- **Vitest**, with **React Testing Library** for component tests
 - Deploys as a static site (Vercel or Netlify — no server required)
 
 Two notes on why:
@@ -74,7 +74,7 @@ type Medication = {
   scheduleType: 'fixed' | 'asNeeded' | 'asDirected';
 
   // fixed only:
-  doses?: Record<Slot, number>;   // decimals allowed: 0.5, 1, 2, 3
+  doses?: Record<Slot, number>;   // whole tablets 0–10, plus ¼/½/¾; other forms up to 999
   frequency?: 'daily' | 'specificDays';
   days?: Weekday[];               // when frequency === 'specificDays'
 
@@ -103,7 +103,7 @@ type PackEntry = {
   medicationLabel: string;     // snapshotted name at time of creation
   dayIndex: number;            // 0-based
   slot: Slot;
-  quantity: number;            // 0.5, 1, 2, 3...
+  quantity: number;            // whole tablets 0–10, plus ¼/½/¾; other forms up to 999
   filled: boolean;
   filledAt?: string;
 };
@@ -122,7 +122,7 @@ These come from a real hospital outpatient medication record and every one of th
 
 | Case | Real example | Required behaviour |
 |---|---|---|
-| Half tablets | "Take ½ a tablet in the morning" | Stored as `0.5`. Displayed as "½". Entry form offers ¼, ½, ¾ as taps, plus whole numbers. |
+| Half tablets | "Take ½ a tablet in the morning" | Whole tablets entered via fixed taps (0–4) plus a capped custom field for higher amounts. Part tablet is a separate row: None, ¼, ½, ¾. No free typing of decimals. Displayed as "½" in the medication list; read out as "½ a tablet" in the entry form. |
 | Split dose, different amounts | "3 tablets in the morning **and** 2 tablets at midday" | One medication, `doses: { morning: 3, noon: 2, evening: 0, night: 0 }`. |
 | Same drug listed twice | Bumetanide appears as a fixed daily dose **and** as a separate when-required dose | Two separate medication records. The app must **not** treat this as a duplicate or offer to merge them. |
 | When required (PRN) | "Take 2 tablets once each day when required" | `scheduleType: 'asNeeded'`. Generates **no compartments**. Appears in a separate "Not packed — as needed" list on the packing screen and the print list. |
@@ -137,7 +137,7 @@ These come from a real hospital outpatient medication record and every one of th
 
 - For `injection`, `inhaler`, and `liquid`, `goesInPack` is forced to `false` and the checkbox is disabled — the person entering the medication can't turn it back on. `other` is left as a free choice, since it might still be something that gets packed (a patch, a sachet).
 - For any form other than `tablet` or `capsule`, the dose-per-time-of-day entry should not use "whole tablets / part tablet" language or the tablet tap buttons — those don't mean anything for a liquid or an injection. A plain free-text amount field is used instead.
-- **Open question for milestone 3:** the free-text amount is stored as a bare number, so a 5ml liquid dose displays only as "5". The data model has no unit field for non-tablet forms. Decide before the packing screen consumes this data whether to add a unit, or to rely on the medication name and notes to carry it.
+- **Decided:** the free-text amount stays a bare number — no unit field is added to the data model. The medication name and notes carry the unit (e.g. "Amoxicillin 250mg/5ml suspension", note "Give 5ml"). This is safe to leave as-is because non-tablet forms are `goesInPack: false` and never generate a compartment, so the packing screen never has to interpret this number on its own.
 
 ---
 
@@ -191,6 +191,13 @@ Every tap writes straight to storage. Closing the browser, the tablet sleeping, 
 ### Also on the packing screen
 
 - A collapsed panel: **"Not going in the pack"** — the as-needed, as-directed, and non-tablet medications, with their directions in full. Present so the person can see nothing has been forgotten, clearly separated so nothing gets packed by mistake.
+
+### Dose entry decisions
+
+- The dose section is collapsible, one time-of-day open at a time.
+- Tapping a dose button sets the value; it does not toggle it off.
+- A zero dose reads as "Not given".
+- The word "tablet" swaps to "capsule" when the form is a capsule.
 
 ---
 
