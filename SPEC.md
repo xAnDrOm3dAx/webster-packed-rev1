@@ -136,7 +136,8 @@ These come from a real hospital outpatient medication record and every one of th
 **Note on the medication form itself (not just the downstream pack):** the `form` field should also change how the medication form behaves while it's being entered, not only what happens once it's saved.
 
 - For `injection`, `inhaler`, and `liquid`, `goesInPack` is forced to `false` and the checkbox is disabled — the person entering the medication can't turn it back on. `other` is left as a free choice, since it might still be something that gets packed (a patch, a sachet).
-- For any form other than `tablet` or `capsule`, the dose-per-time-of-day entry should not use "whole tablets / part tablet" language or the tablet tap buttons — those don't mean anything for a liquid or an injection. At minimum, swap in a plain free-text amount field instead.
+- For any form other than `tablet` or `capsule`, the dose-per-time-of-day entry should not use "whole tablets / part tablet" language or the tablet tap buttons — those don't mean anything for a liquid or an injection. A plain free-text amount field is used instead.
+- **Open question for milestone 3:** the free-text amount is stored as a bare number, so a 5ml liquid dose displays only as "5". The data model has no unit field for non-tablet forms. Decide before the packing screen consumes this data whether to add a unit, or to rely on the medication name and notes to carry it.
 
 ---
 

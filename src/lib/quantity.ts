@@ -19,6 +19,10 @@ export type TabletUnit = 'tablet' | 'capsule';
 export const WHOLE_TABLET_OPTIONS = [0, 1, 2, 3, 4] as const;
 export const CUSTOM_WHOLE_MAX = 10;
 
+// FreeDoseInput's cap on a typed amount (ml, puffs, units — whatever the
+// non-tablet form's dose is measured in).
+export const FREE_DOSE_MAX = 999;
+
 // Dose picker: part tablet row.
 export const DOSE_PART_OPTIONS = [
   { value: 0, label: 'None' },
