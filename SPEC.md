@@ -209,7 +209,14 @@ That is the fault worth understanding. A stray second tap silently reduced a dos
 
 The same reasoning drives two smaller rules. The value display is read-only text and not a number field, so the dose can only ever be what the buttons say it is; and the field and the stored dose must never disagree — emptying the custom field sets that dose to zero rather than leaving the previous value stored behind an empty box. (Reasoning reconstructed from session transcript; original rationale not recorded.)
 
-**Whole tablets: fixed taps 0–4, then a capped custom field.** The whole-tablets row has to fit on one line at the target tablet width without wrapping, which allows about six controls. Doses above four whole tablets exist but are rare, so spending five of the six slots on 5, 6, 7, 8, 9 would waste the row on cases almost nobody enters. Slots one to five are the common values 0–4; the sixth is a "Custom" field, whole numbers only, for the rare higher dose. (Reasoning reconstructed from session transcript; original rationale not recorded.)
+**Whole tablets: fixed taps 0–4, then a capped custom field.** The row is
+kept short deliberately. Doses above four whole tablets exist but are rare,
+so spending slots on 5, 6, 7, 8, 9 would fill the row with values almost
+nobody enters and push the common ones further from the thumb. Slots one to
+five are the common values 0–4; the sixth is a "Custom" field, whole numbers
+only, for the rare higher dose. The row wraps to a second line rather than
+shrinking when it can't fit at 56px (see below). (Reasoning reconstructed
+from session transcript; original rationale not recorded.)
 
 **On the ceiling of 10.** The custom field is capped at 10 whole tablets, making 10¾ the largest dose per time of day. This was set as a bound on a typed field, not derived from any clinical limit, and the reason for 10 rather than some other number was never recorded — treat it as an arbitrary guard rail. If a real prescription needs more, raise `CUSTOM_WHOLE_MAX` deliberately and note the reason here; do not work around it in the calling code. Non-tablet forms use a separate free-text amount capped at 999 for the same reason: a typed field with no bound accepts a slipped keystroke as a real dose. (Reasoning reconstructed from session transcript; original rationale not recorded.)
 
