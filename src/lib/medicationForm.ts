@@ -49,6 +49,23 @@ export function emptyDoses(): Record<Slot, number> {
   return { morning: 0, noon: 0, evening: 0, night: 0 };
 }
 
+// The doses to keep when the Form field changes. Crossing the
+// tablet/non-tablet boundary changes what the number means — 250 is a
+// plausible dose in ml but not in tablets — and the two entry controls
+// enforce different ceilings (FREE_DOSE_MAX 999 vs CUSTOM_WHOLE_MAX 10).
+// Carrying a value across that boundary smuggles a non-tablet amount into
+// the tablet picker, past the cap that only ever gets applied at the
+// keystroke. So the doses reset. Changing form within one side (tablet to
+// capsule, liquid to injection) keeps them: the numbers still mean the
+// same thing there.
+export function dosesAfterFormChange(
+  state: MedicationFormState,
+  nextForm: MedicationFormType,
+): Record<Slot, number> {
+  if (isTabletForm(state.form) === isTabletForm(nextForm)) return state.doses;
+  return emptyDoses();
+}
+
 export function defaultFormState(): MedicationFormState {
   return {
     name: '',

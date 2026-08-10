@@ -10,6 +10,7 @@ import {
 import {
   defaultFormState,
   defaultGoesInPack,
+  dosesAfterFormChange,
   fromMedication,
   goesInPackLocked,
   isTabletForm,
@@ -230,7 +231,12 @@ export default function MedicationForm() {
             value={form.form}
             onChange={(e) => {
               const nextForm = e.target.value as MedicationFormState['form'];
-              setForm((f) => ({ ...f, form: nextForm, goesInPack: defaultGoesInPack(nextForm) }));
+              setForm((f) => ({
+                ...f,
+                form: nextForm,
+                doses: dosesAfterFormChange(f, nextForm),
+                goesInPack: defaultGoesInPack(nextForm),
+              }));
             }}
             className="h-14 w-full rounded-md border border-slate-400 px-3 text-lg text-slate-900"
           >
