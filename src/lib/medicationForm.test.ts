@@ -6,6 +6,7 @@ import {
   defaultGoesInPack,
   doseSummary,
   frequencySummary,
+  fromMedication,
   goesInPackLocked,
   isTabletForm,
   toMedicationInput,
@@ -212,6 +213,93 @@ describe('section 5: not a tablet', () => {
     });
     const med = toMedicationInput(s);
     expect(med.goesInPack).toBe(true);
+  });
+});
+
+// TICKET A1: a packed 'other' medication may store an optional unit word
+// (doseUnit) so its dose never displays as a bare number or a tablet
+// fraction (SPEC.md section 5, revised decision).
+describe('ticket A1: unit word for packed "other" medications', () => {
+  const otherState = (overrides: Partial<MedicationFormState> = {}) =>
+    state({
+      name: 'Movicol sachets',
+      form: 'other',
+      goesInPack: true,
+      doses: { morning: 2, noon: 0, evening: 0, night: 0 },
+      ...overrides,
+    });
+
+  it('persists a trimmed doseUnit for form "other"', () => {
+    const med = toMedicationInput(otherState({ doseUnit: '  sachet ' }));
+    expect(med.doseUnit).toBe('sachet');
+  });
+
+  it('drops a blank doseUnit', () => {
+    expect(toMedicationInput(otherState({ doseUnit: '' })).doseUnit).toBeUndefined();
+    expect(toMedicationInput(otherState({ doseUnit: '   ' })).doseUnit).toBeUndefined();
+  });
+
+  it('drops doseUnit for any form other than "other"', () => {
+    const med = toMedicationInput(
+      state({
+        name: 'Bisoprolol 5mg tablets',
+        form: 'tablet',
+        doseUnit: 'sachet',
+        doses: { morning: 1, noon: 0, evening: 0, night: 0 },
+      }),
+    );
+    expect(med.doseUnit).toBeUndefined();
+  });
+
+  it('round-trips doseUnit through fromMedication', () => {
+    const med = { ...toMedicationInput(otherState({ doseUnit: 'sachet' })), id: 'x', active: true, sortOrder: 0 };
+    expect(fromMedication(med).doseUnit).toBe('sachet');
+  });
+
+  it('summarises "other" doses as a plain number plus the pluralised word', () => {
+    const med = {
+      ...toMedicationInput(
+        otherState({
+          doseUnit: 'sachet',
+          doses: { morning: 2, noon: 0, evening: 1, night: 0.5 },
+        }),
+      ),
+      id: 'x',
+      active: true,
+      sortOrder: 0,
+    };
+    expect(doseSummary(med, DEFAULT_SLOT_LABELS)).toBe(
+      '2 sachets morning, 1 sachet evening, 0.5 sachets night',
+    );
+  });
+
+  it('summarises "other" doses with no unit as the plain number, never a tablet fraction', () => {
+    const med = {
+      ...toMedicationInput(otherState({ doses: { morning: 0.5, noon: 0, evening: 0, night: 0 } })),
+      id: 'x',
+      active: true,
+      sortOrder: 0,
+    };
+    expect(doseSummary(med, DEFAULT_SLOT_LABELS)).toBe('0.5 morning');
+  });
+
+  // TICKET A3: the same form-aware formatter stops a 0.5ml liquid reading
+  // as "½" (half a tablet) on the medications list.
+  it('summarises a liquid dose as a plain number, never a tablet fraction', () => {
+    const med = {
+      ...toMedicationInput(
+        state({
+          name: 'Amoxicillin 250mg/5ml suspension',
+          form: 'liquid',
+          goesInPack: false,
+          doses: { morning: 0.5, noon: 0, evening: 0, night: 0 },
+        }),
+      ),
+      id: 'x',
+      active: true,
+      sortOrder: 0,
+    };
+    expect(doseSummary(med, DEFAULT_SLOT_LABELS)).toBe('0.5 morning');
   });
 });
 

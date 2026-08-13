@@ -78,9 +78,19 @@ export function formatDoseText(quantity: number, unit: TabletUnit = 'tablet'): s
 // trailing zeros, and none of the "tablet"/"a tablet" wording or fraction
 // glyphs from formatQuantity: "2½" means nothing for a 2.5ml liquid dose
 // (SPEC.md section 5, "Not a tablet").
-export function formatFreeDoseText(quantity: number): string {
+//
+// `unit` is the optional word a packed 'other' medication stores in
+// doseUnit ("sachet", "wafer"): the amount is followed by that word,
+// pluralised (append "s", same as tablets/capsules) whenever the quantity
+// is not exactly 1 — "2 sachets", "1 sachet", "0.5 sachets" (SPEC.md
+// section 5, decided under ticket A1). Blank or absent unit: the amount
+// alone.
+export function formatFreeDoseText(quantity: number, unit?: string): string {
   if (!Number.isFinite(quantity) || quantity <= 0) return 'Not given';
-  return String(Math.round(quantity * 100) / 100);
+  const amount = String(Math.round(quantity * 100) / 100);
+  const word = unit?.trim();
+  if (!word) return amount;
+  return quantity === 1 ? `${amount} ${word}` : `${amount} ${word}s`;
 }
 
 // Combines the whole-tablets row and part-tablet row into one dose, e.g.

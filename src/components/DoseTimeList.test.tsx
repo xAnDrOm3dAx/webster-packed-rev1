@@ -13,7 +13,8 @@ afterEach(cleanup);
 function Harness({
   variant,
   unit,
-}: { variant?: 'tablet' | 'freeText'; unit?: 'tablet' | 'capsule' } = {}) {
+  freeUnit,
+}: { variant?: 'tablet' | 'freeText'; unit?: 'tablet' | 'capsule'; freeUnit?: string } = {}) {
   const [doses, setDoses] = useState(emptyDoses());
   return (
     <DoseTimeList
@@ -21,6 +22,7 @@ function Harness({
       onChange={(slot: Slot, value: number) => setDoses((d) => ({ ...d, [slot]: value }))}
       variant={variant}
       unit={unit}
+      freeUnit={freeUnit}
     />
   );
 }
@@ -166,6 +168,24 @@ describe('DoseTimeList freeText variant (non-tablet forms)', () => {
     const row = screen.getByRole('button', { name: /Morning/ });
     expect(row).toHaveTextContent('2.5');
     expect(row.textContent).not.toContain('½');
+  });
+
+  // TICKET A1: a packed 'other' medication's unit word reaches the
+  // collapsed read-out, pluralised whenever the quantity is not exactly 1.
+  it('appends the pluralised unit word to the read-out when freeUnit is set', () => {
+    render(<Harness variant="freeText" freeUnit="sachet" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    const doseField = screen.getByRole('textbox', { name: 'Morning: dose' });
+
+    fireEvent.change(doseField, { target: { value: '2' } });
+    expect(screen.getByRole('button', { name: 'Morning, 2 sachets' })).toBeInTheDocument();
+
+    fireEvent.change(doseField, { target: { value: '1' } });
+    expect(screen.getByRole('button', { name: 'Morning, 1 sachet' })).toBeInTheDocument();
+
+    fireEvent.change(doseField, { target: { value: '0.5' } });
+    expect(screen.getByRole('button', { name: 'Morning, 0.5 sachets' })).toBeInTheDocument();
   });
 });
 

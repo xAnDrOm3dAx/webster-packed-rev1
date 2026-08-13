@@ -4,7 +4,7 @@
 
 import type { Medication, Slot, Weekday } from '../types';
 import { SLOTS } from './constants';
-import { formatQuantity } from './quantity';
+import { formatFreeDoseText, formatQuantity } from './quantity';
 
 export type MedicationFormType = Medication['form'];
 export type ScheduleType = Medication['scheduleType'];
@@ -14,6 +14,7 @@ export type MedicationFormState = {
   brandName: string;
   purpose: string;
   form: MedicationFormType;
+  doseUnit: string;
   scheduleType: ScheduleType;
   doses: Record<Slot, number>;
   frequency: 'daily' | 'specificDays';
@@ -72,6 +73,7 @@ export function defaultFormState(): MedicationFormState {
     brandName: '',
     purpose: '',
     form: 'tablet',
+    doseUnit: '',
     scheduleType: 'fixed',
     doses: emptyDoses(),
     frequency: 'daily',
@@ -88,6 +90,7 @@ export function fromMedication(med: Medication): MedicationFormState {
     brandName: med.brandName ?? '',
     purpose: med.purpose ?? '',
     form: med.form,
+    doseUnit: med.doseUnit ?? '',
     scheduleType: med.scheduleType,
     doses: med.doses ?? emptyDoses(),
     frequency: med.frequency ?? 'daily',
@@ -144,6 +147,10 @@ export function toMedicationInput(
     brandName: state.brandName.trim() || undefined,
     purpose: state.purpose.trim() || undefined,
     form: state.form,
+    // The unit word exists only for form 'other' (SPEC.md section 5,
+    // ticket A1). Any value held in form state for another form — e.g.
+    // typed while the form was 'other', then Form changed — is dropped.
+    doseUnit: state.form === 'other' ? state.doseUnit.trim() || undefined : undefined,
     goesInPack,
     notes: state.notes.trim() || undefined,
   };
@@ -174,8 +181,17 @@ export function doseSummary(
   slotLabels: Record<Slot, string>,
 ): string {
   if (med.scheduleType !== 'fixed' || !med.doses) return '';
+  // Tablet forms keep the ¼/½/¾ glyphs. Every other form shows a plain
+  // number — "½" reads as half a tablet, which a 0.5ml liquid is not
+  // (ticket A3) — and 'other' appends its stored unit word, so a packed
+  // sachet reads "2 sachets" rather than a bare 2 (SPEC.md section 5,
+  // ticket A1).
+  const formatAmount = (quantity: number) =>
+    isTabletForm(med.form)
+      ? formatQuantity(quantity)
+      : formatFreeDoseText(quantity, med.form === 'other' ? med.doseUnit : undefined);
   return SLOTS.filter((slot) => (med.doses?.[slot] ?? 0) > 0)
-    .map((slot) => `${formatQuantity(med.doses![slot])} ${slotLabels[slot].toLowerCase()}`)
+    .map((slot) => `${formatAmount(med.doses![slot])} ${slotLabels[slot].toLowerCase()}`)
     .join(', ');
 }
 

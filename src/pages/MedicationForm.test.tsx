@@ -97,3 +97,67 @@ describe('MedicationForm: changing Form across the tablet/non-tablet boundary', 
     expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 2.5');
   });
 });
+
+// TICKET A1: the optional "What are these called?" field exists only for a
+// packed 'other' medication (SPEC.md section 5, revised decision).
+describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
+  const unitField = () => screen.queryByLabelText(/What are these called/);
+
+  it('is absent for a tablet', () => {
+    renderForm();
+    expect(unitField()).not.toBeInTheDocument();
+  });
+
+  it('is absent for a liquid, which can never be packed', () => {
+    renderForm();
+    setForm('liquid');
+    expect(unitField()).not.toBeInTheDocument();
+  });
+
+  it('appears for "other" only once "Goes in the pack" is ticked', () => {
+    renderForm();
+    setForm('other');
+    expect(unitField()).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    expect(unitField()).toBeInTheDocument();
+  });
+
+  it('keeps the typed word when the tick is removed and restored', () => {
+    renderForm();
+    setForm('other');
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    fireEvent.change(unitField()!, { target: { value: 'sachet' } });
+
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    expect(unitField()).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    expect(unitField()).toHaveValue('sachet');
+  });
+
+  it('clears the word when Form leaves "other"', () => {
+    renderForm();
+    setForm('other');
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    fireEvent.change(unitField()!, { target: { value: 'sachet' } });
+
+    setForm('tablet');
+    setForm('other');
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+
+    expect(unitField()).toHaveValue('');
+  });
+
+  it('shows the collapsed dose row as "2 sachets" while editing', () => {
+    renderForm();
+    setForm('other');
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    fireEvent.change(unitField()!, { target: { value: 'sachet' } });
+
+    expandRow('Morning');
+    fireEvent.change(screen.getByLabelText('Morning: dose'), { target: { value: '2' } });
+
+    expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 2 sachets');
+  });
+});

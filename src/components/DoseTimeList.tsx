@@ -15,15 +15,21 @@ type Props = {
   // Only used when variant is 'tablet': "tablet" or "capsule", matching the
   // medication's Form field. Defaults to "tablet".
   unit?: TabletUnit;
+  // Only used when variant is 'freeText': the optional unit word a packed
+  // 'other' medication stores in doseUnit (SPEC.md section 5, ticket A1),
+  // so the collapsed row reads "2 sachets" rather than a bare 2.
+  freeUnit?: string;
 };
 
 // One time-of-day box is open at a time (DOSE ENTRY spec, "LAYOUT: ONE TIME
 // OF DAY OPEN AT A TIME"). All four rows start collapsed; expanding one
 // collapses whatever else was open.
-export function DoseTimeList({ doses, onChange, variant = 'tablet', unit = 'tablet' }: Props) {
+export function DoseTimeList({ doses, onChange, variant = 'tablet', unit = 'tablet', freeUnit }: Props) {
   const [expanded, setExpanded] = useState<Slot | null>(null);
   const formatText =
-    variant === 'tablet' ? (q: number) => formatDoseText(q, unit) : formatFreeDoseText;
+    variant === 'tablet'
+      ? (q: number) => formatDoseText(q, unit)
+      : (q: number) => formatFreeDoseText(q, freeUnit);
 
   return (
     <div className="flex flex-col gap-2">

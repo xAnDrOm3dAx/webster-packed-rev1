@@ -236,6 +236,9 @@ export default function MedicationForm() {
                 form: nextForm,
                 doses: dosesAfterFormChange(f, nextForm),
                 goesInPack: defaultGoesInPack(nextForm),
+                // The unit word belongs to form 'other' only (SPEC.md
+                // section 5) — leaving 'other' clears it.
+                doseUnit: nextForm === 'other' ? f.doseUnit : '',
               }));
             }}
             className="h-14 w-full rounded-md border border-slate-400 px-3 text-lg text-slate-900"
@@ -280,6 +283,7 @@ export default function MedicationForm() {
                 onChange={(slot, v) => update('doses', { ...form.doses, [slot]: v })}
                 variant={isTabletForm(form.form) ? 'tablet' : 'freeText'}
                 unit={form.form === 'capsule' ? 'capsule' : 'tablet'}
+                freeUnit={form.form === 'other' ? form.doseUnit : undefined}
               />
               {errors.doses && <p className="mt-1 text-base text-red-800">{errors.doses}</p>}
             </div>
@@ -370,6 +374,25 @@ export default function MedicationForm() {
                 ? 'Off automatically — injections, inhalers, and liquids never go in the pack.'
                 : "Turn off for anything that isn't a tablet or capsule sitting in the tray."}
             </p>
+            {form.form === 'other' && form.goesInPack && (
+              <div>
+                <label htmlFor="doseUnit" className="mb-1 block text-lg font-medium text-slate-800">
+                  What are these called? (optional)
+                </label>
+                <input
+                  id="doseUnit"
+                  type="text"
+                  value={form.doseUnit}
+                  onChange={(e) => update('doseUnit', e.target.value)}
+                  className="h-14 w-full rounded-md border border-slate-400 px-3 text-lg text-slate-900"
+                  placeholder="sachet"
+                />
+                <p className="mt-1 text-base text-slate-700">
+                  One word, like "sachet" or "wafer" — doses will show as "2 sachets". Leave blank
+                  to show the number alone.
+                </p>
+              </div>
+            )}
           </>
         ) : (
           <p className="text-base text-slate-700">

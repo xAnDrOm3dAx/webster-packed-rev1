@@ -131,3 +131,32 @@ describe('formatFreeDoseText', () => {
   });
 });
 
+// TICKET A1: a packed 'other' medication may store a unit word ("sachet",
+// "wafer"). The dose is the plain number followed by that word, pluralised
+// whenever the quantity is not exactly 1 (SPEC.md section 5).
+describe('formatFreeDoseText with a unit word (packed "other")', () => {
+  it('pluralises the word for quantities other than exactly 1', () => {
+    expect(formatFreeDoseText(2, 'sachet')).toBe('2 sachets');
+    expect(formatFreeDoseText(0.5, 'sachet')).toBe('0.5 sachets');
+  });
+
+  it('uses the singular for exactly 1', () => {
+    expect(formatFreeDoseText(1, 'sachet')).toBe('1 sachet');
+  });
+
+  it('never shows tablet fraction glyphs', () => {
+    expect(formatFreeDoseText(0.5, 'wafer')).toBe('0.5 wafers');
+    expect(formatFreeDoseText(2.5, 'wafer')).toBe('2.5 wafers');
+  });
+
+  it('shows the number alone when the unit is blank or whitespace', () => {
+    expect(formatFreeDoseText(2, '')).toBe('2');
+    expect(formatFreeDoseText(2, '   ')).toBe('2');
+    expect(formatFreeDoseText(2, undefined)).toBe('2');
+  });
+
+  it('still shows "Not given" for zero, unit or not', () => {
+    expect(formatFreeDoseText(0, 'sachet')).toBe('Not given');
+  });
+});
+

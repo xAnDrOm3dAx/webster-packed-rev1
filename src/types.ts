@@ -14,6 +14,7 @@ export type Medication = {
   brandName?: string; // "Bicor"
   purpose?: string; // "Improve heart function" — free text, copied from the record
   form: 'tablet' | 'capsule' | 'inhaler' | 'injection' | 'liquid' | 'other';
+  doseUnit?: string; // only for form 'other', e.g. "sachet", "wafer"
 
   scheduleType: 'fixed' | 'asNeeded' | 'asDirected';
 
@@ -48,6 +49,7 @@ export type PackEntry = {
   dayIndex: number; // 0-based
   slot: Slot;
   quantity: number; // 0.5, 1, 2, 3...
+  quantityUnit?: string; // snapshot of Medication.doseUnit at pack creation
   filled: boolean;
   filledAt?: string;
 };
