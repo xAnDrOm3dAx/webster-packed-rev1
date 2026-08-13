@@ -30,6 +30,7 @@ Branch audited: `milestone-2-dose-entry-revised` (b0a71c7) — 104 tests passing
 | A6 | `[x]` | **Sort chosen days into week order.** Tapping Fri then Mon stores and shows "Fri, Mon". Fable 5's Fix 5. *Days are sorted on tap and when loading a saved medication.* | Claude Code |
 | A7 | `[ ]` | **Settings groundwork.** Write default values for pack length and time-of-day labels into the data layer now, with a helper that returns saved settings or those defaults. Milestone 3 needs to know a pack is 7 days; the Settings screen isn't until Milestone 6. Without this, Milestone 3 will hardcode it or wander off and build Settings early. | Claude Code |
 | A8 | `[ ]` | **Merge the dose entry work into `main`.** All of it currently sits on `milestone-2-dose-entry-revised`. Do this after A2–A7 are green. | Christopher |
+| A9 | `[x]` | **Revise A1: unit field for all non-tablet forms.** A1 left inhaler/injection/liquid as a bare number because they never generate a compartment. The number is still shown on the medications list, the dose-entry rows, and (once built) the not-packed panel and print list. Optional unit field now shown for every fixed-schedule non-tablet form: measure forms store and display verbatim; `other` keeps A1's pluraliser. Decoupled from "Goes in the pack". | Claude Code |
 
 ---
 

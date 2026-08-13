@@ -30,6 +30,35 @@ export function isTabletForm(form: MedicationFormType): boolean {
   return form === 'tablet' || form === 'capsule';
 }
 
+// How the optional unit word is stored and shown. Tablets and capsules
+// have no unit field — the picker's own "tablet"/"capsule" wording covers
+// it. Measure forms (inhaler, injection, liquid) append the typed word
+// verbatim ("5 ml"). Form 'other' names a countable thing and keeps the
+// A1 pluraliser ("2 sachets"). One function, so storage, the live
+// preview, and the group-crossing clear cannot disagree about which
+// group a form is in.
+export type DoseUnitStyle = 'none' | 'measure' | 'counted';
+
+export function doseUnitStyle(form: MedicationFormType): DoseUnitStyle {
+  if (isTabletForm(form)) return 'none';
+  return form === 'other' ? 'counted' : 'measure';
+}
+
+// The unit word as it should be stored and as the live preview should
+// show it. Counted words are singularised so the display can pluralise
+// them; measure words are trimmed and otherwise left alone. Blank or a
+// tablet form: no unit. Shared by toMedicationInput and the form's
+// collapsed-row preview so the two cannot drift.
+export function normalizeDoseUnit(
+  form: MedicationFormType,
+  raw: string,
+): string | undefined {
+  const style = doseUnitStyle(form);
+  if (style === 'none') return undefined;
+  if (style === 'counted') return singularDoseUnit(raw);
+  return raw.trim() || undefined;
+}
+
 // Forms the spec is explicit never go in the pack (SPEC.md section 4:
 // "goesInPack: false for inhalers, injections, liquids"). 'other' is left
 // as a user choice, since it might still be something that gets packed
@@ -79,6 +108,19 @@ export function goesInPackAfterFormChange(
 ): boolean {
   if (isTabletForm(state.form) === isTabletForm(nextForm)) return state.goesInPack;
   return defaultGoesInPack(nextForm);
+}
+
+// Keep the typed unit when Form stays in the same group (liquid →
+// injection: both measures, "ml" still means ml). Clear it when the
+// group changes: a liquid's "ml" must not survive into 'other', where
+// it would render as "2 mls". Keys on doseUnitStyle, not the
+// tablet/non-tablet boundary that dosesAfterFormChange uses — both
+// liquid and other are non-tablet.
+export function doseUnitAfterFormChange(
+  state: MedicationFormState,
+  nextForm: MedicationFormType,
+): string {
+  return doseUnitStyle(state.form) === doseUnitStyle(nextForm) ? state.doseUnit : '';
 }
 
 // Chosen days in week order, so tapping Fri then Mon stores and shows
@@ -184,10 +226,16 @@ export function toMedicationInput(
     brandName: state.brandName.trim() || undefined,
     purpose: state.purpose.trim() || undefined,
     form: state.form,
-    // The unit word exists only for form 'other' (SPEC.md section 5,
-    // ticket A1). Any value held in form state for another form — e.g.
-    // typed while the form was 'other', then Form changed — is dropped.
-    doseUnit: state.form === 'other' ? singularDoseUnit(state.doseUnit) : undefined,
+    // Non-tablet forms store an optional unit. Measure forms (inhaler,
+    // injection, liquid) keep the typed word verbatim; form 'other'
+    // singularises a countable word. Tablet/capsule drop it. As-needed
+    // and as-directed have no doses, so they drop it too — the field
+    // hides on those schedules and a leftover word would have nothing
+    // to attach to.
+    doseUnit:
+      state.scheduleType === 'fixed'
+        ? normalizeDoseUnit(state.form, state.doseUnit)
+        : undefined,
     goesInPack,
     notes: state.notes.trim() || undefined,
   };
@@ -220,13 +268,13 @@ export function doseSummary(
   if (med.scheduleType !== 'fixed' || !med.doses) return '';
   // Tablet forms keep the ¼/½/¾ glyphs. Every other form shows a plain
   // number — "½" reads as half a tablet, which a 0.5ml liquid is not
-  // (ticket A3) — and 'other' appends its stored unit word, so a packed
-  // sachet reads "2 sachets" rather than a bare 2 (SPEC.md section 5,
-  // ticket A1).
+  // (ticket A3) — followed by the stored unit word when one exists.
+  // Counted ('other') pluralises ("2 sachets"); measure forms append
+  // the word verbatim ("5 ml").
   const formatAmount = (quantity: number) =>
     isTabletForm(med.form)
       ? formatQuantity(quantity)
-      : formatFreeDoseText(quantity, med.form === 'other' ? med.doseUnit : undefined);
+      : formatFreeDoseText(quantity, med.doseUnit, doseUnitStyle(med.form) === 'counted');
   return SLOTS.filter((slot) => (med.doses?.[slot] ?? 0) > 0)
     .map((slot) => `${formatAmount(med.doses![slot])} ${slotLabels[slot].toLowerCase()}`)
     .join(', ');

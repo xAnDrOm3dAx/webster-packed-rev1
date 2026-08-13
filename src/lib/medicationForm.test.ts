@@ -5,11 +5,14 @@ import {
   defaultFormState,
   defaultGoesInPack,
   doseSummary,
+  doseUnitAfterFormChange,
+  doseUnitStyle,
   frequencySummary,
   fromMedication,
   goesInPackAfterFormChange,
   goesInPackLocked,
   isTabletForm,
+  normalizeDoseUnit,
   sortDays,
   toMedicationInput,
   validateForm,
@@ -304,7 +307,54 @@ describe('ticket A1: unit word for packed "other" medications', () => {
     expect(toMedicationInput(otherState({ doseUnit: 's' })).doseUnit).toBe('s');
   });
 
-  it('drops doseUnit for any form other than "other"', () => {
+  it('stores a trimmed doseUnit for a liquid, verbatim', () => {
+    const med = toMedicationInput(
+      state({
+        name: 'Amoxicillin 250mg/5ml suspension',
+        form: 'liquid',
+        goesInPack: false,
+        doseUnit: '  ml ',
+        doses: { morning: 5, noon: 0, evening: 0, night: 0 },
+      }),
+    );
+    expect(med.doseUnit).toBe('ml');
+  });
+
+  it('does not pluralise a measure unit ("5 ml", "1 ml", never "mcgs")', () => {
+    const med = {
+      ...toMedicationInput(
+        state({
+          name: 'Amoxicillin 250mg/5ml suspension',
+          form: 'liquid',
+          goesInPack: false,
+          doseUnit: 'ml',
+          doses: { morning: 5, noon: 0, evening: 1, night: 0 },
+        }),
+      ),
+      id: 'x',
+      active: true,
+      sortOrder: 0,
+    };
+    expect(doseSummary(med, DEFAULT_SLOT_LABELS)).toBe('5 ml morning, 1 ml evening');
+
+    const mcg = {
+      ...toMedicationInput(
+        state({
+          name: 'B12 injection',
+          form: 'injection',
+          goesInPack: false,
+          doseUnit: 'mcg',
+          doses: { morning: 20, noon: 0, evening: 0, night: 0 },
+        }),
+      ),
+      id: 'y',
+      active: true,
+      sortOrder: 0,
+    };
+    expect(doseSummary(mcg, DEFAULT_SLOT_LABELS)).toBe('20 mcg morning');
+  });
+
+  it('drops doseUnit for tablet and capsule forms', () => {
     const med = toMedicationInput(
       state({
         name: 'Bisoprolol 5mg tablets',
@@ -365,6 +415,66 @@ describe('ticket A1: unit word for packed "other" medications', () => {
       sortOrder: 0,
     };
     expect(doseSummary(med, DEFAULT_SLOT_LABELS)).toBe('0.5 morning');
+  });
+
+  it('drops doseUnit when the schedule is as-needed or as-directed', () => {
+    const med = toMedicationInput(
+      state({
+        name: 'Salbutamol inhaler',
+        form: 'inhaler',
+        scheduleType: 'asNeeded',
+        doseUnit: 'puff',
+        directions: 'Take when required',
+      }),
+    );
+    expect(med.doseUnit).toBeUndefined();
+  });
+});
+
+describe('doseUnitStyle and normalizeDoseUnit', () => {
+  it('groups tablet and capsule as none, other as counted, the rest as measure', () => {
+    expect(doseUnitStyle('tablet')).toBe('none');
+    expect(doseUnitStyle('capsule')).toBe('none');
+    expect(doseUnitStyle('other')).toBe('counted');
+    expect(doseUnitStyle('liquid')).toBe('measure');
+    expect(doseUnitStyle('inhaler')).toBe('measure');
+    expect(doseUnitStyle('injection')).toBe('measure');
+  });
+
+  it('singularises a counted word and leaves a measure word alone', () => {
+    expect(normalizeDoseUnit('other', 'sachets')).toBe('sachet');
+    expect(normalizeDoseUnit('liquid', 'ml')).toBe('ml');
+    expect(normalizeDoseUnit('liquid', '  mcg ')).toBe('mcg');
+    expect(normalizeDoseUnit('tablet', 'ml')).toBeUndefined();
+    expect(normalizeDoseUnit('liquid', '  ')).toBeUndefined();
+  });
+});
+
+describe('doseUnitAfterFormChange', () => {
+  it('keeps the word when Form stays in the measure group (liquid to injection)', () => {
+    const s = state({ form: 'liquid', doseUnit: 'ml' });
+    expect(doseUnitAfterFormChange(s, 'injection')).toBe('ml');
+    expect(doseUnitAfterFormChange(s, 'inhaler')).toBe('ml');
+  });
+
+  it('clears the word when Form crosses from liquid to other', () => {
+    const s = state({ form: 'liquid', doseUnit: 'ml' });
+    expect(doseUnitAfterFormChange(s, 'other')).toBe('');
+  });
+
+  it('clears the word when Form crosses from liquid to tablet', () => {
+    const s = state({ form: 'liquid', doseUnit: 'ml' });
+    expect(doseUnitAfterFormChange(s, 'tablet')).toBe('');
+  });
+
+  it('clears the word when Form crosses from other to liquid', () => {
+    const s = state({ form: 'other', doseUnit: 'sachet' });
+    expect(doseUnitAfterFormChange(s, 'liquid')).toBe('');
+  });
+
+  it('keeps the word when Form stays on other', () => {
+    const s = state({ form: 'other', doseUnit: 'sachet' });
+    expect(doseUnitAfterFormChange(s, 'other')).toBe('sachet');
   });
 });
 

@@ -92,16 +92,24 @@ export function takesEsPlural(word: string): boolean {
 // glyphs from formatQuantity: "2½" means nothing for a 2.5ml liquid dose
 // (SPEC.md section 5, "Not a tablet").
 //
-// `unit` is the optional word a packed 'other' medication stores in
-// doseUnit ("sachet", "wafer", "patch"): the amount is followed by that
-// word, pluralised whenever the quantity is not exactly 1 — append "es"
-// when the word takes it ("2 patches"), otherwise "s" ("2 sachets").
-// Blank or absent unit: the amount alone (SPEC.md section 5, ticket A1).
-export function formatFreeDoseText(quantity: number, unit?: string): string {
+// `unit` is the optional word stored in doseUnit. For form 'other' it is
+// a countable word ("sachet", "wafer", "patch") and `pluralise` stays
+// true (the default): the amount is followed by that word, pluralised
+// whenever the quantity is not exactly 1 — append "es" when the word
+// takes it ("2 patches"), otherwise "s" ("2 sachets"). For measure
+// forms (inhaler, injection, liquid) pass `pluralise: false` so the
+// word is appended verbatim ("5 ml", "2 puff", "20 mcg"). Blank or
+// absent unit: the amount alone.
+export function formatFreeDoseText(
+  quantity: number,
+  unit?: string,
+  pluralise = true,
+): string {
   if (!Number.isFinite(quantity) || quantity <= 0) return 'Not given';
   const amount = String(Math.round(quantity * 100) / 100);
   const word = unit?.trim();
   if (!word) return amount;
+  if (!pluralise) return `${amount} ${word}`;
   const suffix = takesEsPlural(word) ? 'es' : 's';
   return quantity === 1 ? `${amount} ${word}` : `${amount} ${word}${suffix}`;
 }

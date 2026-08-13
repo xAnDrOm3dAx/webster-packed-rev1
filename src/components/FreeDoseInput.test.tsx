@@ -112,4 +112,15 @@ describe('FreeDoseInput', () => {
     expect(screen.getByText('Stored: 0')).toBeInTheDocument();
     expect(screen.getByText('Not given')).toBeInTheDocument();
   });
+
+  it('shows the unit after the field and folds it into the aria-label', () => {
+    function UnitHarness() {
+      const [value, setValue] = useState(0);
+      return <FreeDoseInput value={value} onChange={setValue} ariaLabel="Morning" unit="ml" />;
+    }
+    render(<UnitHarness />);
+
+    expect(screen.getByRole('textbox', { name: 'Morning: dose in ml' })).toBeInTheDocument();
+    expect(screen.getByText('ml')).toBeInTheDocument();
+  });
 });

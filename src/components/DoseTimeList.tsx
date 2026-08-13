@@ -15,21 +15,33 @@ type Props = {
   // Only used when variant is 'tablet': "tablet" or "capsule", matching the
   // medication's Form field. Defaults to "tablet".
   unit?: TabletUnit;
-  // Only used when variant is 'freeText': the optional unit word a packed
-  // 'other' medication stores in doseUnit (SPEC.md section 5, ticket A1),
-  // so the collapsed row reads "2 sachets" rather than a bare 2.
+  // Only used when variant is 'freeText': the optional unit word stored
+  // in doseUnit. Counted ('other') words are already singularised by
+  // normalizeDoseUnit; measure words are the trimmed typed text.
   freeUnit?: string;
+  // Whether to pluralise freeUnit in the collapsed row. Defaults to true
+  // so an omitted flag still renders "2 sachets" (DoseTimeList.test.tsx
+  // sets freeUnit with no flag). Measure forms pass false so "ml" stays
+  // "ml". Do not coerce this — `?? false` would render "2 sachet".
+  freeUnitPluralise?: boolean;
 };
 
 // One time-of-day box is open at a time (DOSE ENTRY spec, "LAYOUT: ONE TIME
 // OF DAY OPEN AT A TIME"). All four rows start collapsed; expanding one
 // collapses whatever else was open.
-export function DoseTimeList({ doses, onChange, variant = 'tablet', unit = 'tablet', freeUnit }: Props) {
+export function DoseTimeList({
+  doses,
+  onChange,
+  variant = 'tablet',
+  unit = 'tablet',
+  freeUnit,
+  freeUnitPluralise = true,
+}: Props) {
   const [expanded, setExpanded] = useState<Slot | null>(null);
   const formatText =
     variant === 'tablet'
       ? (q: number) => formatDoseText(q, unit)
-      : (q: number) => formatFreeDoseText(q, freeUnit);
+      : (q: number) => formatFreeDoseText(q, freeUnit, freeUnitPluralise);
 
   return (
     <div className="flex flex-col gap-2">
@@ -67,6 +79,7 @@ export function DoseTimeList({ doses, onChange, variant = 'tablet', unit = 'tabl
                   value={doses[slot]}
                   onChange={(v) => onChange(slot, v)}
                   ariaLabel={DEFAULT_SLOT_LABELS[slot]}
+                  unit={freeUnit}
                 />
               )}
             </div>

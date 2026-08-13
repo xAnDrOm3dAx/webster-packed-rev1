@@ -14,7 +14,7 @@ export type Medication = {
   brandName?: string; // "Bicor"
   purpose?: string; // "Improve heart function" — free text, copied from the record
   form: 'tablet' | 'capsule' | 'inhaler' | 'injection' | 'liquid' | 'other';
-  doseUnit?: string; // only for form 'other', e.g. "sachet", "wafer"
+  doseUnit?: string; // optional unit for non-tablet forms: verbatim measure (ml, puff) or counted word for 'other' (sachet, wafer)
 
   scheduleType: 'fixed' | 'asNeeded' | 'asDirected';
 

@@ -99,74 +99,92 @@ describe('MedicationForm: changing Form across the tablet/non-tablet boundary', 
   });
 });
 
-// TICKET A1: the optional "What are these called?" field exists only for a
-// packed 'other' medication (SPEC.md section 5, revised decision).
-describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
-  const unitField = () => screen.queryByLabelText(/What are these called/);
+// The optional unit field is shown for every fixed-schedule non-tablet
+// form. Measure forms (inhaler, injection, liquid) use a verbatim unit;
+// form 'other' keeps the A1 counted-word field. Decoupled from "Goes in
+// the pack" — the field is always visible while the schedule is Fixed.
+describe('MedicationForm: unit field for non-tablet forms', () => {
+  const countedField = () => screen.queryByLabelText(/What are these called/);
+  const measureField = () => screen.queryByLabelText(/How is the dose measured/);
 
   it('is absent for a tablet', () => {
     renderForm();
-    expect(unitField()).not.toBeInTheDocument();
+    expect(countedField()).not.toBeInTheDocument();
+    expect(measureField()).not.toBeInTheDocument();
   });
 
-  it('is absent for a liquid, which can never be packed', () => {
+  it('shows the measure field for a liquid', () => {
     renderForm();
     setForm('liquid');
-    expect(unitField()).not.toBeInTheDocument();
+    expect(measureField()).toBeInTheDocument();
+    expect(countedField()).not.toBeInTheDocument();
   });
 
-  it('appears for "other" only once "Goes in the pack" is ticked', () => {
+  it('shows the counted field for "other" without ticking "Goes in the pack"', () => {
     renderForm();
     setForm('other');
-    expect(unitField()).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    expect(unitField()).toBeInTheDocument();
+    expect(countedField()).toBeInTheDocument();
   });
 
-  // A word left behind after unticking would show on the medications list
-  // with no field visible to edit it, so unticking clears it.
-  it('clears the typed word when the tick is removed', () => {
-    renderForm();
-    setForm('other');
-    fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    fireEvent.change(unitField()!, { target: { value: 'sachet' } });
-
-    fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    expect(unitField()).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    expect(unitField()).toHaveValue('');
-  });
-
-  it('saves no doseUnit when the word was typed and the tick then removed', () => {
+  it('keeps doseUnit when the word was typed and the tick then removed', () => {
     renderForm();
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Movicol sachets' } });
     setForm('other');
     fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    fireEvent.change(unitField()!, { target: { value: 'sachet' } });
+    fireEvent.change(countedField()!, { target: { value: 'sachet' } });
     expandRow('Morning');
-    fireEvent.change(screen.getByLabelText('Morning: dose'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText(/Morning: dose/), { target: { value: '2' } });
 
     fireEvent.click(screen.getByLabelText('Goes in the pack'));
     fireEvent.click(screen.getByRole('button', { name: 'Add medication' }));
 
     const saved = repo.listMedications();
     expect(saved).toHaveLength(1);
-    expect(saved[0].doseUnit).toBeUndefined();
+    expect(saved[0].doseUnit).toBe('sachet');
   });
 
   it('clears the word when Form leaves "other"', () => {
     renderForm();
     setForm('other');
     fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    fireEvent.change(unitField()!, { target: { value: 'sachet' } });
+    fireEvent.change(countedField()!, { target: { value: 'sachet' } });
 
     setForm('tablet');
     setForm('other');
     fireEvent.click(screen.getByLabelText('Goes in the pack'));
 
-    expect(unitField()).toHaveValue('');
+    expect(countedField()).toHaveValue('');
+  });
+
+  it('clears a liquid unit when Form changes to other', () => {
+    renderForm();
+    setForm('liquid');
+    fireEvent.change(measureField()!, { target: { value: 'ml' } });
+
+    setForm('other');
+
+    expect(countedField()).toHaveValue('');
+  });
+
+  it('keeps a liquid unit when Form changes to injection', () => {
+    renderForm();
+    setForm('liquid');
+    fireEvent.change(measureField()!, { target: { value: 'ml' } });
+
+    setForm('injection');
+
+    expect(measureField()).toHaveValue('ml');
+  });
+
+  it('shows the collapsed dose row as "5 ml", never "5 mls"', () => {
+    renderForm();
+    setForm('liquid');
+    fireEvent.change(measureField()!, { target: { value: 'ml' } });
+
+    expandRow('Morning');
+    fireEvent.change(screen.getByLabelText(/Morning: dose/), { target: { value: '5' } });
+
+    expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 5 ml');
   });
 
   // Typed as the plural off the box — the live read-out singularises the
@@ -175,10 +193,10 @@ describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
     renderForm();
     setForm('other');
     fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    fireEvent.change(unitField()!, { target: { value: 'sachets' } });
+    fireEvent.change(countedField()!, { target: { value: 'sachets' } });
 
     expandRow('Morning');
-    fireEvent.change(screen.getByLabelText('Morning: dose'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText(/Morning: dose/), { target: { value: '2' } });
 
     expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 2 sachets');
   });
@@ -189,10 +207,10 @@ describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
       renderForm();
       setForm('other');
       fireEvent.click(screen.getByLabelText('Goes in the pack'));
-      fireEvent.change(unitField()!, { target: { value: typed } });
+      fireEvent.change(countedField()!, { target: { value: typed } });
 
       expandRow('Morning');
-      fireEvent.change(screen.getByLabelText('Morning: dose'), { target: { value: '2' } });
+      fireEvent.change(screen.getByLabelText(/Morning: dose/), { target: { value: '2' } });
 
       expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 2 patches');
     }

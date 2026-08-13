@@ -165,5 +165,12 @@ describe('formatFreeDoseText with a unit word (packed "other")', () => {
   it('still shows "Not given" for zero, unit or not', () => {
     expect(formatFreeDoseText(0, 'sachet')).toBe('Not given');
   });
+
+  it('appends a measure unit verbatim when pluralise is false', () => {
+    expect(formatFreeDoseText(5, 'ml', false)).toBe('5 ml');
+    expect(formatFreeDoseText(1, 'ml', false)).toBe('1 ml');
+    expect(formatFreeDoseText(20, 'mcg', false)).toBe('20 mcg');
+    expect(formatFreeDoseText(2, 'puff', false)).toBe('2 puff');
+  });
 });
 

@@ -10,11 +10,13 @@ import {
 import {
   defaultFormState,
   dosesAfterFormChange,
+  doseUnitAfterFormChange,
+  doseUnitStyle,
   fromMedication,
   goesInPackAfterFormChange,
   goesInPackLocked,
   isTabletForm,
-  singularDoseUnit,
+  normalizeDoseUnit,
   sortDays,
   toMedicationInput,
   validateForm,
@@ -231,9 +233,7 @@ export default function MedicationForm() {
                 form: nextForm,
                 doses: dosesAfterFormChange(f, nextForm),
                 goesInPack: goesInPackAfterFormChange(f, nextForm),
-                // The unit word belongs to form 'other' only (SPEC.md
-                // section 5) — leaving 'other' clears it.
-                doseUnit: nextForm === 'other' ? f.doseUnit : '',
+                doseUnit: doseUnitAfterFormChange(f, nextForm),
               }));
             }}
             className="h-14 w-full rounded-md border border-slate-400 px-3 text-lg text-slate-900"
@@ -271,6 +271,34 @@ export default function MedicationForm() {
 
         {form.scheduleType === 'fixed' ? (
           <>
+            {doseUnitStyle(form.form) !== 'none' && (
+              <div>
+                <label htmlFor="doseUnit" className="mb-1 block text-lg font-medium text-slate-800">
+                  {doseUnitStyle(form.form) === 'counted'
+                    ? 'What are these called? (optional)'
+                    : 'How is the dose measured? (optional)'}
+                </label>
+                <input
+                  id="doseUnit"
+                  type="text"
+                  value={form.doseUnit}
+                  onChange={(e) => update('doseUnit', e.target.value)}
+                  className="h-14 w-full rounded-md border border-slate-400 px-3 text-lg text-slate-900"
+                  placeholder={
+                    doseUnitStyle(form.form) === 'counted'
+                      ? 'sachet'
+                      : form.form === 'inhaler'
+                        ? 'puff'
+                        : 'ml'
+                  }
+                />
+                <p className="mt-1 text-base text-slate-700">
+                  {doseUnitStyle(form.form) === 'counted'
+                    ? 'One word, like "sachet" or "wafer" — doses will show as "2 sachets". Leave blank to show the number alone.'
+                    : 'Shown after the amount, exactly as you type it — 5 ml.'}
+                </p>
+              </div>
+            )}
             <div id="doses" ref={dosesRef} tabIndex={-1}>
               <p className="mb-2 text-lg font-medium text-slate-800">Dose per time of day</p>
               <DoseTimeList
@@ -278,7 +306,8 @@ export default function MedicationForm() {
                 onChange={(slot, v) => update('doses', { ...form.doses, [slot]: v })}
                 variant={isTabletForm(form.form) ? 'tablet' : 'freeText'}
                 unit={form.form === 'capsule' ? 'capsule' : 'tablet'}
-                freeUnit={form.form === 'other' ? singularDoseUnit(form.doseUnit) : undefined}
+                freeUnit={normalizeDoseUnit(form.form, form.doseUnit)}
+                freeUnitPluralise={doseUnitStyle(form.form) === 'counted'}
               />
               {errors.doses && <p className="mt-1 text-base text-red-800">{errors.doses}</p>}
             </div>
@@ -361,11 +390,6 @@ export default function MedicationForm() {
                   setForm((f) => ({
                     ...f,
                     goesInPack: e.target.checked,
-                    // The unit field is only visible while ticked; a word
-                    // left behind after unticking would show on the
-                    // medications list with no way to edit it, so unticking
-                    // clears it — same as Form leaving 'other'.
-                    doseUnit: e.target.checked ? f.doseUnit : '',
                   }))
                 }
                 className="h-7 w-7 disabled:opacity-50"
@@ -379,25 +403,6 @@ export default function MedicationForm() {
                 ? 'Off automatically — injections, inhalers, and liquids never go in the pack.'
                 : "Turn off for anything that isn't a tablet or capsule sitting in the tray."}
             </p>
-            {form.form === 'other' && form.goesInPack && (
-              <div>
-                <label htmlFor="doseUnit" className="mb-1 block text-lg font-medium text-slate-800">
-                  What are these called? (optional)
-                </label>
-                <input
-                  id="doseUnit"
-                  type="text"
-                  value={form.doseUnit}
-                  onChange={(e) => update('doseUnit', e.target.value)}
-                  className="h-14 w-full rounded-md border border-slate-400 px-3 text-lg text-slate-900"
-                  placeholder="sachet"
-                />
-                <p className="mt-1 text-base text-slate-700">
-                  One word, like "sachet" or "wafer" — doses will show as "2 sachets". Leave blank
-                  to show the number alone.
-                </p>
-              </div>
-            )}
           </>
         ) : (
           <p className="text-base text-slate-700">

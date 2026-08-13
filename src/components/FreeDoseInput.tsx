@@ -5,6 +5,9 @@ type Props = {
   value: number;
   onChange: (value: number) => void;
   ariaLabel: string;
+  // Optional unit shown after the amount field (e.g. "ml"). Folded into
+  // the aria-label as "Morning: dose in ml" when present.
+  unit?: string;
 };
 
 // Strips everything except digits and a decimal point — no minus sign, no
@@ -27,8 +30,9 @@ function sanitize(raw: string): string {
 // the unit might be ml, puffs, or units (SPEC.md section 5, "Not a
 // tablet"). Local text state mirrors DosePicker's custom-input pattern so a
 // trailing decimal point isn't eaten while typing.
-export function FreeDoseInput({ value, onChange, ariaLabel }: Props) {
+export function FreeDoseInput({ value, onChange, ariaLabel, unit }: Props) {
   const [text, setText] = useState<string>(() => (value > 0 ? String(value) : ''));
+  const word = unit?.trim();
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const sanitized = sanitize(e.target.value);
@@ -53,15 +57,22 @@ export function FreeDoseInput({ value, onChange, ariaLabel }: Props) {
   return (
     <div>
       <label className="mb-1.5 block text-base font-medium text-slate-700">Dose</label>
-      <input
-        type="text"
-        inputMode="decimal"
-        value={text}
-        onChange={handleChange}
-        placeholder="Amount"
-        aria-label={`${ariaLabel}: dose`}
-        className="h-14 w-full rounded-md border-2 border-slate-400 px-3 text-lg text-slate-900"
-      />
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={text}
+          onChange={handleChange}
+          placeholder="Amount"
+          aria-label={word ? `${ariaLabel}: dose in ${word}` : `${ariaLabel}: dose`}
+          className="h-14 min-w-0 flex-1 rounded-md border-2 border-slate-400 px-3 text-lg text-slate-900"
+        />
+        {word ? (
+          <span className="shrink-0 text-lg text-slate-700" aria-hidden="true">
+            {word}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }

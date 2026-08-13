@@ -14,7 +14,13 @@ function Harness({
   variant,
   unit,
   freeUnit,
-}: { variant?: 'tablet' | 'freeText'; unit?: 'tablet' | 'capsule'; freeUnit?: string } = {}) {
+  freeUnitPluralise,
+}: {
+  variant?: 'tablet' | 'freeText';
+  unit?: 'tablet' | 'capsule';
+  freeUnit?: string;
+  freeUnitPluralise?: boolean;
+} = {}) {
   const [doses, setDoses] = useState(emptyDoses());
   return (
     <DoseTimeList
@@ -23,6 +29,7 @@ function Harness({
       variant={variant}
       unit={unit}
       freeUnit={freeUnit}
+      freeUnitPluralise={freeUnitPluralise}
     />
   );
 }
@@ -176,7 +183,7 @@ describe('DoseTimeList freeText variant (non-tablet forms)', () => {
     render(<Harness variant="freeText" freeUnit="sachet" />);
 
     fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
-    const doseField = screen.getByRole('textbox', { name: 'Morning: dose' });
+    const doseField = screen.getByRole('textbox', { name: /Morning: dose/ });
 
     fireEvent.change(doseField, { target: { value: '2' } });
     expect(screen.getByRole('button', { name: 'Morning, 2 sachets' })).toBeInTheDocument();
@@ -186,6 +193,19 @@ describe('DoseTimeList freeText variant (non-tablet forms)', () => {
 
     fireEvent.change(doseField, { target: { value: '0.5' } });
     expect(screen.getByRole('button', { name: 'Morning, 0.5 sachets' })).toBeInTheDocument();
+  });
+
+  it('appends a measure unit verbatim when freeUnitPluralise is false', () => {
+    render(<Harness variant="freeText" freeUnit="ml" freeUnitPluralise={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+    const doseField = screen.getByRole('textbox', { name: /Morning: dose/ });
+
+    fireEvent.change(doseField, { target: { value: '5' } });
+    expect(screen.getByRole('button', { name: 'Morning, 5 ml' })).toBeInTheDocument();
+
+    fireEvent.change(doseField, { target: { value: '1' } });
+    expect(screen.getByRole('button', { name: 'Morning, 1 ml' })).toBeInTheDocument();
   });
 });
 

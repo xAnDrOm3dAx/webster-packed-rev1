@@ -70,7 +70,7 @@ type Medication = {
   brandName?: string;          // "Bicor"
   purpose?: string;            // "Improve heart function" — free text, copied from the record
   form: 'tablet' | 'capsule' | 'inhaler' | 'injection' | 'liquid' | 'other';
-  doseUnit?: string;           // only for form 'other', e.g. "sachet", "wafer"
+  doseUnit?: string;           // optional unit for non-tablet forms. Measure (inhaler, injection, liquid): stored and shown verbatim, e.g. "ml", "puff". Form 'other': a countable word, singularised, e.g. "sachet", "wafer"
 
   scheduleType: 'fixed' | 'asNeeded' | 'asDirected';
 
@@ -139,7 +139,7 @@ These come from a real hospital outpatient medication record and every one of th
 
 - For `injection`, `inhaler`, and `liquid`, `goesInPack` is forced to `false` and the checkbox is disabled — the person entering the medication can't turn it back on. `other` is left as a free choice, since it might still be something that gets packed (a patch, a sachet).
 - For any form other than `tablet` or `capsule`, the dose-per-time-of-day entry should not use "whole tablets / part tablet" language or the tablet tap buttons — those don't mean anything for a liquid or an injection. A plain free-text amount field is used instead.
-- **Decided (revised, ticket A1):** medications with form `other` may be packed if the person ticks "Goes in the pack". When they do, an optional "What are these called?" field appears, storing a single word in `doseUnit` (e.g. "sachet", "wafer"). Doses for `other` are shown as a plain number followed by that word, pluralised whenever the quantity is not exactly 1: "2 sachets", "1 sachet", "0.5 sachets". Never tablet fractions. If the field is left blank, the dose shows as a plain number alone. This field appears nowhere except form `other`. For `injection`, `inhaler`, and `liquid` the free-text amount stays a bare number with no unit field — the medication name and notes carry the unit (e.g. "Amoxicillin 250mg/5ml suspension", note "Give 5ml"). That is safe because those three forms are `goesInPack: false` and never generate a compartment, so the packing screen never has to interpret their number on its own.
+- **Decided (revised, ticket A1; revised again):** medications with form `other` may be packed if the person ticks "Goes in the pack". An optional unit field stores a word in `doseUnit`, shown for every fixed-schedule non-tablet form, whether or not it goes in the pack. For form `other` the field is labelled "What are these called?" and stores a countable word (e.g. "sachet", "wafer"), shown as a plain number followed by that word, pluralised whenever the quantity is not exactly 1: "2 sachets", "1 sachet", "0.5 sachets". Never tablet fractions. If the field is left blank, the dose shows as a plain number alone. For `injection`, `inhaler`, and `liquid` the same field is labelled "How is the dose measured?" and stores a measure (e.g. "ml", "puff", "mg") shown verbatim after the amount: "5 ml", "2 puff", "1 ml". Never re-spelled. A1 originally left those three as a bare number on the grounds that they never generate a compartment, so the packing screen never has to interpret the number on its own. That compartment argument still holds — `goesInPack` stays forced off for those three, and they still never generate a compartment — but the medications list, the dose-entry rows, the "Not going in the pack" panel, and the print list all show the number, so the unit field is now shown for them too. Crossing between a measure form and `other` (or a tablet form) clears the word, because "ml" must not survive into `other` and render as "2 mls". Unticking "Goes in the pack" no longer clears the word: the field stays visible.
 - Changing Form between a tablet form (tablet, capsule) and a non-tablet form
 resets all four doses to 0. The number means something different on each
 side: 250 is a plausible dose in ml, never in tablets. Each side's ceiling
@@ -177,7 +177,7 @@ So:
 
 - Show one medication: name, brand, what it's for, quantity per dose, any notes ("swallow whole").
 - Below it, a grid of only the compartments this medication goes into. For a once-daily morning tablet on a 7-day pack, that's 7 cells in a row — not a 28-cell grid with 21 greyed out.
-- Each cell shows the day and the quantity ("Mon — 1", "Tue — ½"). For form `other` the cell shows the quantity followed by the stored unit word if one exists ("Mon — 2 sachets"), never tablet fractions; with no unit word stored, the quantity alone.
+- Each cell shows the day and the quantity ("Mon — 1", "Tue — ½"). For form `other` the cell shows the quantity followed by the stored unit word if one exists ("Mon — 2 sachets"), never tablet fractions; with no unit word stored, the quantity alone. Measure forms (`inhaler`, `injection`, `liquid`) never reach a compartment — they stay `goesInPack: false` — but when they appear in the "Not going in the pack" panel their quantity is followed by the stored unit verbatim ("5 ml"), or the quantity alone if none was stored.
 - Tapping a cell marks it filled. Tapping again unfills it.
 - A **"Fill all"** button ticks every cell for that medication at once — this is the common case and should be one tap.
 - **Next medication** advances. Progress shown as "Medication 4 of 11", plus a thin bar.
@@ -290,7 +290,7 @@ This isn't optional polish. Without it a cleared cache means re-typing eleven me
 
 ## 11. Print list
 
-A print stylesheet producing one page: a grid of days across, dose times down, listing what goes in each compartment. Compartment quantities follow the same rule as section 7: tablets and capsules use fraction glyphs; form `other` shows the quantity followed by its stored unit word when one exists, otherwise the quantity alone. Below it, the "not packed" medications with their full directions. Large type, black on white, no colour dependency.
+A print stylesheet producing one page: a grid of days across, dose times down, listing what goes in each compartment. Compartment quantities follow the same rule as section 7: tablets and capsules use fraction glyphs; form `other` shows the quantity followed by its stored unit word when one exists, otherwise the quantity alone. Below it, the "not packed" medications with their full directions — measure forms among them show quantity plus the stored unit verbatim ("5 ml") when one exists. Large type, black on white, no colour dependency.
 
 This is the fallback for when the tablet is flat or the person would rather work from paper.
 
