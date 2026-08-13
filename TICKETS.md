@@ -71,6 +71,7 @@ None of these block anything. Worth clearing before the Milestone 3 close-out so
 | D3 | `[-]` | New medications take their position number from the current count. If real deletion is ever added to the screen, two medications could end up with the same position. | Whenever deletion is added |
 | D4 | `[-]` | No dose checking at the data layer before Import ships — already documented in §14. | Milestone 6 |
 | D5 | `[-]` | Dev server port changed. No action, noted so it isn't a surprise. | — |
+| D6 | `[-]` | Unit-word pluraliser over-strips a silent "e" after a sibilant ("doses" stores as "dos", shows as "1 dos"). Won't fix: you can't tell a silent e from the letters, and "dose" is an unlikely thing to type in "What are these called?". "lozenges" happens to work because the e follows g, not a sibilant. | — |
 
 ---
 
