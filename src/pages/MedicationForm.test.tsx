@@ -182,6 +182,21 @@ describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
 
     expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 2 sachets');
   });
+
+  it('shows "2 patches" whether the word is typed as "patch" or "patches"', () => {
+    for (const typed of ['patch', 'patches']) {
+      cleanup();
+      renderForm();
+      setForm('other');
+      fireEvent.click(screen.getByLabelText('Goes in the pack'));
+      fireEvent.change(unitField()!, { target: { value: typed } });
+
+      expandRow('Morning');
+      fireEvent.change(screen.getByLabelText('Morning: dose'), { target: { value: '2' } });
+
+      expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 2 patches');
+    }
+  });
 });
 
 function renderEdit(id: string) {

@@ -149,6 +149,13 @@ describe('formatFreeDoseText with a unit word (packed "other")', () => {
     expect(formatFreeDoseText(2.5, 'wafer')).toBe('2.5 wafers');
   });
 
+  it('pluralises a sibilant word with "es" ("2 patches", not "2 patchs")', () => {
+    expect(formatFreeDoseText(1, 'patch')).toBe('1 patch');
+    expect(formatFreeDoseText(2, 'patch')).toBe('2 patches');
+    expect(formatFreeDoseText(1, 'box')).toBe('1 box');
+    expect(formatFreeDoseText(2, 'box')).toBe('2 boxes');
+  });
+
   it('shows the number alone when the unit is blank or whitespace', () => {
     expect(formatFreeDoseText(2, '')).toBe('2');
     expect(formatFreeDoseText(2, '   ')).toBe('2');

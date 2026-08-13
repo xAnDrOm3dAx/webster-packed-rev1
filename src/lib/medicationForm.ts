@@ -4,7 +4,7 @@
 
 import type { Medication, Slot, Weekday } from '../types';
 import { SLOTS, WEEKDAYS } from './constants';
-import { formatFreeDoseText, formatQuantity } from './quantity';
+import { formatFreeDoseText, formatQuantity, takesEsPlural } from './quantity';
 
 export type MedicationFormType = Medication['form'];
 export type ScheduleType = Medication['scheduleType'];
@@ -151,12 +151,17 @@ export function validateForm(state: MedicationFormState): MedicationFormErrors {
 
 // The unit word as it should be stored: trimmed, and reduced to the
 // singular. People copy the word off the box, which usually prints the
-// plural ("sachets"); storing that as-is would make the display pluralise
-// it again ("2 sachetss"). Only a single trailing "s" is stripped, and
-// words of two characters or fewer are left alone. Blank means no unit.
+// plural ("sachets", "patches"); storing that as-is would make the display
+// pluralise it again ("2 sachetss", "2 patcheses"). If the word ends in
+// "es" and the stem takes "-es" in the plural (ch/sh/s/x/z), strip both
+// letters ("patches" -> "patch"); otherwise strip a single trailing "s".
+// Words of two characters or fewer are left alone. Blank means no unit.
 export function singularDoseUnit(unit: string): string | undefined {
   const word = unit.trim();
   if (word === '') return undefined;
+  if (word.length > 2 && word.endsWith('es') && takesEsPlural(word.slice(0, -2))) {
+    return word.slice(0, -2);
+  }
   if (word.length > 2 && word.endsWith('s')) return word.slice(0, -1);
   return word;
 }

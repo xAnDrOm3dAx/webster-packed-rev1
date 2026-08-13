@@ -73,6 +73,19 @@ export function formatDoseText(quantity: number, unit: TabletUnit = 'tablet'): s
   return glyph ? `${whole}${glyph} ${unit}s` : `${formatQuantity(quantity)} ${unit}s`;
 }
 
+// A unit word ending in a sibilant (ch, sh, s, x, z) takes "-es" in the
+// plural — "patch"/"patches", "box"/"boxes". Used both when storing the
+// typed word and when displaying it, so the two sides cannot drift.
+export function takesEsPlural(word: string): boolean {
+  return (
+    word.endsWith('ch') ||
+    word.endsWith('sh') ||
+    word.endsWith('s') ||
+    word.endsWith('x') ||
+    word.endsWith('z')
+  );
+}
+
 // Plain-number dose text for non-tablet forms (injections, inhalers,
 // liquids, other) — just the amount, rounded to 2 decimal places with no
 // trailing zeros, and none of the "tablet"/"a tablet" wording or fraction
@@ -80,17 +93,17 @@ export function formatDoseText(quantity: number, unit: TabletUnit = 'tablet'): s
 // (SPEC.md section 5, "Not a tablet").
 //
 // `unit` is the optional word a packed 'other' medication stores in
-// doseUnit ("sachet", "wafer"): the amount is followed by that word,
-// pluralised (append "s", same as tablets/capsules) whenever the quantity
-// is not exactly 1 — "2 sachets", "1 sachet", "0.5 sachets" (SPEC.md
-// section 5, decided under ticket A1). Blank or absent unit: the amount
-// alone.
+// doseUnit ("sachet", "wafer", "patch"): the amount is followed by that
+// word, pluralised whenever the quantity is not exactly 1 — append "es"
+// when the word takes it ("2 patches"), otherwise "s" ("2 sachets").
+// Blank or absent unit: the amount alone (SPEC.md section 5, ticket A1).
 export function formatFreeDoseText(quantity: number, unit?: string): string {
   if (!Number.isFinite(quantity) || quantity <= 0) return 'Not given';
   const amount = String(Math.round(quantity * 100) / 100);
   const word = unit?.trim();
   if (!word) return amount;
-  return quantity === 1 ? `${amount} ${word}` : `${amount} ${word}s`;
+  const suffix = takesEsPlural(word) ? 'es' : 's';
+  return quantity === 1 ? `${amount} ${word}` : `${amount} ${word}${suffix}`;
 }
 
 // Combines the whole-tablets row and part-tablet row into one dose, e.g.

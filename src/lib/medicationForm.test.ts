@@ -244,11 +244,59 @@ describe('ticket A1: unit word for packed "other" medications', () => {
   // The box usually prints the plural ("sachets"); storing it as typed
   // would make the display pluralise it again ("2 sachetss").
   it('stores a plural unit word as the singular ("sachets" -> "sachet")', () => {
+    expect(toMedicationInput(otherState({ doseUnit: 'sachet' })).doseUnit).toBe('sachet');
     expect(toMedicationInput(otherState({ doseUnit: 'sachets' })).doseUnit).toBe('sachet');
   });
 
   it('leaves a word not ending in "s" alone ("wafer" -> "wafer")', () => {
     expect(toMedicationInput(otherState({ doseUnit: 'wafer' })).doseUnit).toBe('wafer');
+    expect(toMedicationInput(otherState({ doseUnit: 'wafers' })).doseUnit).toBe('wafer');
+  });
+
+  it('stores "patch" and "patches" as "patch"', () => {
+    expect(toMedicationInput(otherState({ doseUnit: 'patch' })).doseUnit).toBe('patch');
+    expect(toMedicationInput(otherState({ doseUnit: 'patches' })).doseUnit).toBe('patch');
+  });
+
+  it('stores "box" and "boxes" as "box"', () => {
+    expect(toMedicationInput(otherState({ doseUnit: 'box' })).doseUnit).toBe('box');
+    expect(toMedicationInput(otherState({ doseUnit: 'boxes' })).doseUnit).toBe('box');
+  });
+
+  it('displays "1 patch" / "2 patches" after storing either spelling', () => {
+    for (const typed of ['patch', 'patches']) {
+      const med = {
+        ...toMedicationInput(
+          otherState({
+            doseUnit: typed,
+            doses: { morning: 2, noon: 0, evening: 1, night: 0 },
+          }),
+        ),
+        id: 'x',
+        active: true,
+        sortOrder: 0,
+      };
+      expect(med.doseUnit).toBe('patch');
+      expect(doseSummary(med, DEFAULT_SLOT_LABELS)).toBe('2 patches morning, 1 patch evening');
+    }
+  });
+
+  it('displays "1 box" / "2 boxes" after storing either spelling', () => {
+    for (const typed of ['box', 'boxes']) {
+      const med = {
+        ...toMedicationInput(
+          otherState({
+            doseUnit: typed,
+            doses: { morning: 2, noon: 0, evening: 1, night: 0 },
+          }),
+        ),
+        id: 'x',
+        active: true,
+        sortOrder: 0,
+      };
+      expect(med.doseUnit).toBe('box');
+      expect(doseSummary(med, DEFAULT_SLOT_LABELS)).toBe('2 boxes morning, 1 box evening');
+    }
   });
 
   it('leaves words of two characters or fewer alone', () => {
