@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import * as repo from '../storage/repository';
 import MedicationForm from './MedicationForm';
@@ -181,5 +181,120 @@ describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
     fireEvent.change(screen.getByLabelText('Morning: dose'), { target: { value: '2' } });
 
     expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 2 sachets');
+  });
+});
+
+function renderEdit(id: string) {
+  render(
+    <MemoryRouter initialEntries={[`/medications/${id}`]}>
+      <Routes>
+        <Route path="/medications/:id" element={<MedicationForm />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+// Ticket A2: DosePicker / FreeDoseInput only read their value into local
+// state on mount. Loading the medication in an effect left them mounted
+// against empty doses, so a saved dose above 4 showed an empty custom field.
+describe('MedicationForm: editing a saved dose (ticket A2)', () => {
+  it('preselects the custom field when a tablet dose above 4 is reopened', () => {
+    const med = repo.createMedication({
+      name: 'Big dose tablets',
+      form: 'tablet',
+      scheduleType: 'fixed',
+      doses: { morning: 7, noon: 0, evening: 0, night: 0 },
+      frequency: 'daily',
+      goesInPack: true,
+      active: true,
+      sortOrder: 0,
+    });
+
+    renderEdit(med.id);
+
+    expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 7 tablets');
+    expandRow('Morning');
+    const custom = screen.getByLabelText(/^Morning: custom whole tablets/);
+    expect(custom).toHaveValue('7');
+    expect(custom).toHaveClass('bg-teal-800');
+  });
+
+  it('shows the stored amount when a liquid dose is reopened', () => {
+    const med = repo.createMedication({
+      name: 'Amoxicillin 250mg/5ml suspension',
+      form: 'liquid',
+      scheduleType: 'fixed',
+      doses: { morning: 2.5, noon: 0, evening: 0, night: 0 },
+      frequency: 'daily',
+      goesInPack: false,
+      active: true,
+      sortOrder: 0,
+    });
+
+    renderEdit(med.id);
+
+    expect(rowHeader('Morning')).toHaveAccessibleName('Morning, 2.5');
+    expandRow('Morning');
+    expect(screen.getByLabelText('Morning: dose')).toHaveValue('2.5');
+  });
+});
+
+// Ticket A4: unticking "Goes in the pack" then changing Form within the
+// tablet side must not silently put the tick back on.
+describe('MedicationForm: Goes in the pack across a Form change (ticket A4)', () => {
+  it('keeps the box unticked when Form changes from tablet to capsule', () => {
+    renderForm();
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    expect(screen.getByLabelText('Goes in the pack')).not.toBeChecked();
+
+    setForm('capsule');
+
+    expect(screen.getByLabelText('Goes in the pack')).not.toBeChecked();
+  });
+});
+
+// Ticket A5: leaving Fixed and coming back must not clear the tick. Saving
+// an as-needed medication still stores goesInPack false.
+describe('MedicationForm: Goes in the pack across a schedule round-trip (ticket A5)', () => {
+  it('keeps the tick after Fixed → As needed → Fixed', () => {
+    renderForm();
+    expect(screen.getByLabelText('Goes in the pack')).toBeChecked();
+
+    fireEvent.click(screen.getByRole('button', { name: 'As needed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fixed schedule' }));
+
+    expect(screen.getByLabelText('Goes in the pack')).toBeChecked();
+  });
+
+  it('stores goesInPack false when saving an as-needed medication', () => {
+    renderForm();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Bumetanide 1mg tablets' } });
+    fireEvent.click(screen.getByRole('button', { name: 'As needed' }));
+    fireEvent.change(screen.getByLabelText('Directions'), {
+      target: { value: 'Take 2 tablets once each day when required' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add medication' }));
+
+    const saved = repo.listMedications();
+    expect(saved).toHaveLength(1);
+    expect(saved[0].goesInPack).toBe(false);
+  });
+});
+
+// Ticket A6: tapping Fri then Mon stores Mon, Fri.
+describe('MedicationForm: specific days store in week order (ticket A6)', () => {
+  it('saves Fri then Mon as Mon, Fri', () => {
+    renderForm();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Weekly tablet' } });
+    expandRow('Morning');
+    fireEvent.click(within(screen.getByRole('group', { name: 'Morning: whole tablets' })).getByRole('button', { name: '1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Specific days' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fri' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mon' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add medication' }));
+
+    const saved = repo.listMedications();
+    expect(saved).toHaveLength(1);
+    expect(saved[0].days).toEqual(['mon', 'fri']);
   });
 });

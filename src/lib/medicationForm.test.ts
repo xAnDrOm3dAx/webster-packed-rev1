@@ -7,8 +7,10 @@ import {
   doseSummary,
   frequencySummary,
   fromMedication,
+  goesInPackAfterFormChange,
   goesInPackLocked,
   isTabletForm,
+  sortDays,
   toMedicationInput,
   validateForm,
   type MedicationFormState,
@@ -352,5 +354,64 @@ describe('validation', () => {
   it('requires directions for asNeeded/asDirected', () => {
     const s = state({ name: 'X', scheduleType: 'asNeeded', directions: '' });
     expect(validateForm(s).directions).toBeTruthy();
+  });
+});
+
+// Ticket A4: changing Form within one side of the tablet/non-tablet
+// boundary must keep the person's "Goes in the pack" choice.
+describe('goesInPackAfterFormChange', () => {
+  it('keeps an unticked box when Form changes from tablet to capsule', () => {
+    const s = state({ form: 'tablet', goesInPack: false });
+    expect(goesInPackAfterFormChange(s, 'capsule')).toBe(false);
+  });
+
+  it('keeps a ticked box when Form changes from tablet to capsule', () => {
+    const s = state({ form: 'tablet', goesInPack: true });
+    expect(goesInPackAfterFormChange(s, 'capsule')).toBe(true);
+  });
+
+  it('keeps the choice when Form changes from liquid to other', () => {
+    const s = state({ form: 'liquid', goesInPack: false });
+    expect(goesInPackAfterFormChange(s, 'other')).toBe(false);
+  });
+
+  it('resets to the new form default when crossing from tablet to liquid', () => {
+    const s = state({ form: 'tablet', goesInPack: true });
+    expect(goesInPackAfterFormChange(s, 'liquid')).toBe(false);
+  });
+
+  it('resets to the new form default when crossing from liquid to tablet', () => {
+    const s = state({ form: 'liquid', goesInPack: false });
+    expect(goesInPackAfterFormChange(s, 'tablet')).toBe(true);
+  });
+});
+
+// Ticket A6: chosen days store and display in week order, not tap order.
+describe('sortDays', () => {
+  it('orders Fri-then-Mon as Mon, Fri', () => {
+    expect(sortDays(['fri', 'mon'])).toEqual(['mon', 'fri']);
+  });
+
+  it('sorts previously saved out-of-order days when loading a medication', () => {
+    const med = {
+      ...toMedicationInput(
+        state({
+          name: 'Weekly tablet',
+          frequency: 'specificDays',
+          days: ['fri', 'mon'],
+          doses: { morning: 1, noon: 0, evening: 0, night: 0 },
+        }),
+      ),
+      id: 'x',
+      active: true,
+      sortOrder: 0,
+    };
+    // Bypass toMedicationInput's current days so the stored shape is
+    // tap-order, the way older records were saved.
+    med.days = ['fri', 'mon'];
+    expect(fromMedication(med).days).toEqual(['mon', 'fri']);
+    expect(frequencySummary({ ...med, days: fromMedication(med).days }, WEEKDAY_LABELS)).toBe(
+      'Mon, Fri',
+    );
   });
 });

@@ -9,19 +9,20 @@ import {
 } from '../lib/constants';
 import {
   defaultFormState,
-  defaultGoesInPack,
   dosesAfterFormChange,
   fromMedication,
+  goesInPackAfterFormChange,
   goesInPackLocked,
   isTabletForm,
   singularDoseUnit,
+  sortDays,
   toMedicationInput,
   validateForm,
   type MedicationFormErrors,
   type MedicationFormState,
 } from '../lib/medicationForm';
 import * as repo from '../storage/repository';
-import type { Medication, Weekday } from '../types';
+import type { Weekday } from '../types';
 
 // Order matches the fields as they appear on the page, so both the error
 // summary and "jump to first error" focus follow the same reading order.
@@ -37,9 +38,15 @@ export default function MedicationForm() {
   const isEditing = Boolean(id);
   const navigate = useNavigate();
 
-  const [existing, setExisting] = useState<Medication | undefined>(undefined);
-  const [notFound, setNotFound] = useState(false);
-  const [form, setForm] = useState<MedicationFormState>(defaultFormState());
+  // localStorage is synchronous, so the medication is available on the
+  // first render. Loading it in an effect left DosePicker / FreeDoseInput
+  // mounting against empty doses, then never picking up the stored value
+  // (ticket A2: a saved dose of 7 showed an empty custom field).
+  const existing = id ? repo.getMedication(id) : undefined;
+  const notFound = isEditing && !existing;
+  const [form, setForm] = useState<MedicationFormState>(() =>
+    existing ? fromMedication(existing) : defaultFormState(),
+  );
   const [touched, setTouched] = useState(false);
   const [failedSubmitCount, setFailedSubmitCount] = useState(0);
 
@@ -54,17 +61,6 @@ export default function MedicationForm() {
     days: daysRef,
     directions: directionsRef,
   };
-
-  useEffect(() => {
-    if (!id) return;
-    const med = repo.getMedication(id);
-    if (!med) {
-      setNotFound(true);
-      return;
-    }
-    setExisting(med);
-    setForm(fromMedication(med));
-  }, [id]);
 
   // The error summary only enters the DOM once `touched` is true, so its ref
   // isn't attached yet in the same event handler that fails validation.
@@ -90,20 +86,18 @@ export default function MedicationForm() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  // asNeeded and asDirected medications never go in the pack (SPEC.md section 5).
+  // asNeeded and asDirected never go in the pack on save (toMedicationInput
+  // forces false). Leave the checkbox state alone so Fixed → As needed →
+  // Fixed does not silently clear a tick the person had set (ticket A5).
   function updateScheduleType(value: MedicationFormState['scheduleType']) {
-    setForm((f) => ({
-      ...f,
-      scheduleType: value,
-      goesInPack: value === 'fixed' ? f.goesInPack : false,
-    }));
+    setForm((f) => ({ ...f, scheduleType: value }));
   }
 
   function toggleDay(day: Weekday) {
-    setForm((f) => ({
-      ...f,
-      days: f.days.includes(day) ? f.days.filter((d) => d !== day) : [...f.days, day],
-    }));
+    setForm((f) => {
+      const days = f.days.includes(day) ? f.days.filter((d) => d !== day) : [...f.days, day];
+      return { ...f, days: sortDays(days) };
+    });
   }
 
   function focusField(key: keyof MedicationFormErrors) {
@@ -236,7 +230,7 @@ export default function MedicationForm() {
                 ...f,
                 form: nextForm,
                 doses: dosesAfterFormChange(f, nextForm),
-                goesInPack: defaultGoesInPack(nextForm),
+                goesInPack: goesInPackAfterFormChange(f, nextForm),
                 // The unit word belongs to form 'other' only (SPEC.md
                 // section 5) — leaving 'other' clears it.
                 doseUnit: nextForm === 'other' ? f.doseUnit : '',

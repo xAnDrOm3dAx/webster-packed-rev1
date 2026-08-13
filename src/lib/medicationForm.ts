@@ -3,7 +3,7 @@
 // be tested directly, without rendering anything.
 
 import type { Medication, Slot, Weekday } from '../types';
-import { SLOTS } from './constants';
+import { SLOTS, WEEKDAYS } from './constants';
 import { formatFreeDoseText, formatQuantity } from './quantity';
 
 export type MedicationFormType = Medication['form'];
@@ -67,6 +67,26 @@ export function dosesAfterFormChange(
   return emptyDoses();
 }
 
+// Same boundary as dosesAfterFormChange: keep the person's "Goes in the
+// pack" choice when Form stays on one side (tablet → capsule must not
+// silently re-tick a box they had turned off). Crossing the boundary
+// resets to the new form's default, because the meaning of packing
+// changes with the form. Locked forms (injection/inhaler/liquid) are
+// still forced off at display and save.
+export function goesInPackAfterFormChange(
+  state: MedicationFormState,
+  nextForm: MedicationFormType,
+): boolean {
+  if (isTabletForm(state.form) === isTabletForm(nextForm)) return state.goesInPack;
+  return defaultGoesInPack(nextForm);
+}
+
+// Chosen days in week order, so tapping Fri then Mon stores and shows
+// "Mon, Fri" rather than tap order.
+export function sortDays(days: Weekday[]): Weekday[] {
+  return WEEKDAYS.filter((day) => days.includes(day));
+}
+
 export function defaultFormState(): MedicationFormState {
   return {
     name: '',
@@ -94,7 +114,7 @@ export function fromMedication(med: Medication): MedicationFormState {
     scheduleType: med.scheduleType,
     doses: med.doses ?? emptyDoses(),
     frequency: med.frequency ?? 'daily',
-    days: med.days ?? [],
+    days: sortDays(med.days ?? []),
     directions: med.directions ?? '',
     goesInPack: med.goesInPack,
     notes: med.notes ?? '',
