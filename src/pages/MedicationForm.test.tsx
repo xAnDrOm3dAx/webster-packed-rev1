@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import * as repo from '../storage/repository';
 import MedicationForm from './MedicationForm';
 
 beforeEach(() => {
@@ -123,7 +124,9 @@ describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
     expect(unitField()).toBeInTheDocument();
   });
 
-  it('keeps the typed word when the tick is removed and restored', () => {
+  // A word left behind after unticking would show on the medications list
+  // with no field visible to edit it, so unticking clears it.
+  it('clears the typed word when the tick is removed', () => {
     renderForm();
     setForm('other');
     fireEvent.click(screen.getByLabelText('Goes in the pack'));
@@ -133,7 +136,24 @@ describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
     expect(unitField()).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    expect(unitField()).toHaveValue('sachet');
+    expect(unitField()).toHaveValue('');
+  });
+
+  it('saves no doseUnit when the word was typed and the tick then removed', () => {
+    renderForm();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Movicol sachets' } });
+    setForm('other');
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    fireEvent.change(unitField()!, { target: { value: 'sachet' } });
+    expandRow('Morning');
+    fireEvent.change(screen.getByLabelText('Morning: dose'), { target: { value: '2' } });
+
+    fireEvent.click(screen.getByLabelText('Goes in the pack'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add medication' }));
+
+    const saved = repo.listMedications();
+    expect(saved).toHaveLength(1);
+    expect(saved[0].doseUnit).toBeUndefined();
   });
 
   it('clears the word when Form leaves "other"', () => {
@@ -149,11 +169,13 @@ describe('MedicationForm: unit word for packed "other" (ticket A1)', () => {
     expect(unitField()).toHaveValue('');
   });
 
-  it('shows the collapsed dose row as "2 sachets" while editing', () => {
+  // Typed as the plural off the box — the live read-out singularises the
+  // word the same way saving does, so it never shows "2 sachetss".
+  it('shows the collapsed dose row as "2 sachets" even when the plural is typed', () => {
     renderForm();
     setForm('other');
     fireEvent.click(screen.getByLabelText('Goes in the pack'));
-    fireEvent.change(unitField()!, { target: { value: 'sachet' } });
+    fireEvent.change(unitField()!, { target: { value: 'sachets' } });
 
     expandRow('Morning');
     fireEvent.change(screen.getByLabelText('Morning: dose'), { target: { value: '2' } });

@@ -14,6 +14,7 @@ import {
   fromMedication,
   goesInPackLocked,
   isTabletForm,
+  singularDoseUnit,
   toMedicationInput,
   validateForm,
   type MedicationFormErrors,
@@ -283,7 +284,7 @@ export default function MedicationForm() {
                 onChange={(slot, v) => update('doses', { ...form.doses, [slot]: v })}
                 variant={isTabletForm(form.form) ? 'tablet' : 'freeText'}
                 unit={form.form === 'capsule' ? 'capsule' : 'tablet'}
-                freeUnit={form.form === 'other' ? form.doseUnit : undefined}
+                freeUnit={form.form === 'other' ? singularDoseUnit(form.doseUnit) : undefined}
               />
               {errors.doses && <p className="mt-1 text-base text-red-800">{errors.doses}</p>}
             </div>
@@ -362,7 +363,17 @@ export default function MedicationForm() {
                 type="checkbox"
                 checked={goesInPackLocked(form.form) ? false : form.goesInPack}
                 disabled={goesInPackLocked(form.form)}
-                onChange={(e) => update('goesInPack', e.target.checked)}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    goesInPack: e.target.checked,
+                    // The unit field is only visible while ticked; a word
+                    // left behind after unticking would show on the
+                    // medications list with no way to edit it, so unticking
+                    // clears it — same as Form leaving 'other'.
+                    doseUnit: e.target.checked ? f.doseUnit : '',
+                  }))
+                }
                 className="h-7 w-7 disabled:opacity-50"
               />
               <label htmlFor="goesInPack" className="text-lg text-slate-800">

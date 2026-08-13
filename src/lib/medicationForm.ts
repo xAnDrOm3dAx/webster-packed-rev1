@@ -129,6 +129,18 @@ export function validateForm(state: MedicationFormState): MedicationFormErrors {
   return errors;
 }
 
+// The unit word as it should be stored: trimmed, and reduced to the
+// singular. People copy the word off the box, which usually prints the
+// plural ("sachets"); storing that as-is would make the display pluralise
+// it again ("2 sachetss"). Only a single trailing "s" is stripped, and
+// words of two characters or fewer are left alone. Blank means no unit.
+export function singularDoseUnit(unit: string): string | undefined {
+  const word = unit.trim();
+  if (word === '') return undefined;
+  if (word.length > 2 && word.endsWith('s')) return word.slice(0, -1);
+  return word;
+}
+
 // Builds the Medication fields that come from the form. id, active, and
 // sortOrder are assigned by the caller (repository.ts owns id; the page
 // decides sortOrder and active state).
@@ -150,7 +162,7 @@ export function toMedicationInput(
     // The unit word exists only for form 'other' (SPEC.md section 5,
     // ticket A1). Any value held in form state for another form — e.g.
     // typed while the form was 'other', then Form changed — is dropped.
-    doseUnit: state.form === 'other' ? state.doseUnit.trim() || undefined : undefined,
+    doseUnit: state.form === 'other' ? singularDoseUnit(state.doseUnit) : undefined,
     goesInPack,
     notes: state.notes.trim() || undefined,
   };

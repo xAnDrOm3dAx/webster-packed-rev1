@@ -239,6 +239,21 @@ describe('ticket A1: unit word for packed "other" medications', () => {
     expect(toMedicationInput(otherState({ doseUnit: '   ' })).doseUnit).toBeUndefined();
   });
 
+  // The box usually prints the plural ("sachets"); storing it as typed
+  // would make the display pluralise it again ("2 sachetss").
+  it('stores a plural unit word as the singular ("sachets" -> "sachet")', () => {
+    expect(toMedicationInput(otherState({ doseUnit: 'sachets' })).doseUnit).toBe('sachet');
+  });
+
+  it('leaves a word not ending in "s" alone ("wafer" -> "wafer")', () => {
+    expect(toMedicationInput(otherState({ doseUnit: 'wafer' })).doseUnit).toBe('wafer');
+  });
+
+  it('leaves words of two characters or fewer alone', () => {
+    expect(toMedicationInput(otherState({ doseUnit: 'gs' })).doseUnit).toBe('gs');
+    expect(toMedicationInput(otherState({ doseUnit: 's' })).doseUnit).toBe('s');
+  });
+
   it('drops doseUnit for any form other than "other"', () => {
     const med = toMedicationInput(
       state({
