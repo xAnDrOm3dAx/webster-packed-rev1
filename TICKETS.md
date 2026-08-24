@@ -60,6 +60,7 @@ None of these block anything. Worth clearing before the Milestone 3 close-out so
 | C4 | `[ ]` | **Repoint the code comments.** Four files cite "DOSE ENTRY REVISION 2" notes that only ever existed in a chat window. Anyone reading the code goes hunting for a file that doesn't exist. | Claude Code |
 | C5 | `[ ]` | **Document where the Clear button sits** — it's in the part-tablet row and clears both rows. One sentence in §7 for completeness. | Claude Code |
 | C6 | `[?]` | **Decide whether the silent caps stay silent.** Typing an 11th tablet does nothing at all, with no message. Defensible for a rare case, but it reads as a broken app to someone at a kitchen table. | Christopher |
+| C7 | `[?]` | **Decide whether measure-form units should pluralise.** SPEC.md §5 says inhaler/injection/liquid units are shown verbatim, never re-spelled — its own example is "2 puff", not "2 puffs" (`formatFreeDoseText` in `quantity.ts` passes `pluralise: false` for these forms deliberately). Raised because it reads oddly on screen ("2 injection"); current behaviour matches spec exactly, so this is a spec-change decision, not a bug. | Christopher |
 
 ---
 
