@@ -1,4 +1,4 @@
-import type { Slot, Weekday } from '../types';
+import type { Settings, Slot, Weekday } from '../types';
 
 export const SLOTS: Slot[] = ['morning', 'noon', 'evening', 'night'];
 
@@ -7,6 +7,21 @@ export const DEFAULT_SLOT_LABELS: Record<Slot, string> = {
   noon: 'Noon',
   evening: 'Evening',
   night: 'Night',
+};
+
+// A pack is seven days unless the person changes it on the Settings screen
+// (SPEC.md section 4). Milestone 3 generates compartments from this number, so
+// it must have a value long before Settings exists to edit it.
+export const DEFAULT_CYCLE_DAYS: Settings['cycleDays'] = 7;
+
+// What settings look like before anyone has saved any. `personName` and
+// `pinHash` are empty rather than absent: an empty `pinHash` means no PIN has
+// been set, which is the state the app starts in.
+export const DEFAULT_SETTINGS: Settings = {
+  personName: '',
+  cycleDays: DEFAULT_CYCLE_DAYS,
+  pinHash: '',
+  slotLabels: DEFAULT_SLOT_LABELS,
 };
 
 export const WEEKDAYS: Weekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];

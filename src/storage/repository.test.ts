@@ -1,4 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  DEFAULT_CYCLE_DAYS,
+  DEFAULT_SETTINGS,
+  DEFAULT_SLOT_LABELS,
+} from '../lib/constants';
 import type { Medication, PackEntry, PackInstance, Settings } from '../types';
 import * as repo from './repository';
 
@@ -57,6 +62,73 @@ describe('settings', () => {
     // A fresh read from storage (no in-memory state carried over) still finds it.
     const reloaded = repo.getSettings();
     expect(reloaded).toEqual(buildSettings({ personName: 'Mum' }));
+  });
+});
+
+describe('settings defaults', () => {
+  it('returns the defaults when nothing has been saved', () => {
+    expect(repo.getSettingsOrDefaults()).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('defaults a pack to seven days', () => {
+    expect(repo.getSettingsOrDefaults().cycleDays).toBe(7);
+    expect(DEFAULT_CYCLE_DAYS).toBe(7);
+  });
+
+  it('defaults the time-of-day labels to Morning, Noon, Evening, Night', () => {
+    expect(repo.getSettingsOrDefaults().slotLabels).toEqual({
+      morning: 'Morning',
+      noon: 'Noon',
+      evening: 'Evening',
+      night: 'Night',
+    });
+  });
+
+  it('returns saved settings in preference to the defaults', () => {
+    const settings = buildSettings({
+      personName: 'Mum',
+      cycleDays: 14,
+      slotLabels: { morning: 'Breakfast', noon: 'Lunch', evening: 'Tea', night: 'Bedtime' },
+    });
+    repo.saveSettings(settings);
+    expect(repo.getSettingsOrDefaults()).toEqual(settings);
+  });
+
+  it('fills in a missing field without discarding the saved ones', () => {
+    // Settings written by an older version, or restored from a partial import,
+    // can be missing a field the app now reads.
+    repo.saveSettings({ personName: 'Mum', pinHash: 'hash' } as Settings);
+    const settings = repo.getSettingsOrDefaults();
+    expect(settings.personName).toBe('Mum');
+    expect(settings.cycleDays).toBe(DEFAULT_CYCLE_DAYS);
+    expect(settings.slotLabels).toEqual(DEFAULT_SLOT_LABELS);
+  });
+
+  it('fills in a missing slot label one at a time', () => {
+    repo.saveSettings(
+      buildSettings({ slotLabels: { night: 'Bedtime' } as Settings['slotLabels'] }),
+    );
+    expect(repo.getSettingsOrDefaults().slotLabels).toEqual({
+      morning: 'Morning',
+      noon: 'Noon',
+      evening: 'Evening',
+      night: 'Bedtime',
+    });
+  });
+
+  it('returns a fresh object each time, so a caller cannot alter the defaults', () => {
+    const first = repo.getSettingsOrDefaults();
+    first.cycleDays = 14;
+    first.slotLabels.night = 'Bedtime';
+    const second = repo.getSettingsOrDefaults();
+    expect(second.cycleDays).toBe(DEFAULT_CYCLE_DAYS);
+    expect(second.slotLabels.night).toBe('Night');
+    expect(DEFAULT_SLOT_LABELS.night).toBe('Night');
+  });
+
+  it('does not write the defaults to storage', () => {
+    repo.getSettingsOrDefaults();
+    expect(repo.getSettings()).toBeNull();
   });
 });
 

@@ -111,6 +111,12 @@ type PackEntry = {
 };
 ```
 
+### Settings defaults
+
+Settings are the one record the app has to be able to read before anything has been saved: pack length and the time-of-day labels are both needed from Milestone 3 onwards, while the Settings screen that edits them is not built until Milestone 6. The defaults are an empty `personName`, an empty `pinHash` (meaning no PIN has been set), `cycleDays: 7`, and the labels Morning / Noon / Evening / Night.
+
+`getSettings()` in `repository.ts` stays the read for what has actually been saved, and still returns `null` when nothing has. `getSettingsOrDefaults()` is the read for a value to work with: it fills in field by field, so a settings record missing a field — written by an older version, or restored from a partial import — still comes back complete. Neither one writes the defaults to storage; a settings record exists only once the person saves one.
+
 ### Two rules about PackEntry
 
 1. **Every entry is generated when the pack is created**, and each stores a snapshot of the medication name and quantity. If the medication list changes mid-pack, the pack in progress does not change underneath the person. It stays exactly as it was when they started.

@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS, DEFAULT_SLOT_LABELS } from '../lib/constants';
 import type { Medication, PackEntry, PackInstance, Settings } from '../types';
 
 // The only module in this app allowed to touch localStorage. Every read and
@@ -37,6 +38,25 @@ export function getSettings(): Settings | null {
 export function saveSettings(settings: Settings): Settings {
   writeJSON(KEYS.settings, settings);
   return settings;
+}
+
+// The read to use anywhere the app needs a setting to work with rather than a
+// record of what has been saved — pack length and slot labels both have a
+// sensible default, and the Settings screen that edits them is not built until
+// Milestone 6. Fills in per field, so settings written by an older version (or
+// restored from a partial import) still come back complete. The returned
+// object is always a fresh copy: callers can hold or change it without
+// touching the defaults.
+export function getSettingsOrDefaults(): Settings {
+  const saved = getSettings();
+  if (saved === null) {
+    return { ...DEFAULT_SETTINGS, slotLabels: { ...DEFAULT_SLOT_LABELS } };
+  }
+  return {
+    ...DEFAULT_SETTINGS,
+    ...saved,
+    slotLabels: { ...DEFAULT_SLOT_LABELS, ...saved.slotLabels },
+  };
 }
 
 // ---- Medications ----
