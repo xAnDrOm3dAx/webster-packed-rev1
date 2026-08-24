@@ -74,6 +74,7 @@ None of these block anything. Worth clearing before the Milestone 3 close-out so
 | D4 | `[-]` | No dose checking at the data layer before Import ships — already documented in §14. | Milestone 6 |
 | D5 | `[-]` | Dev server port changed. No action, noted so it isn't a surprise. | — |
 | D6 | `[-]` | Unit-word pluraliser over-strips a silent "e" after a sibilant ("doses" stores as "dos", shows as "1 dos"). Won't fix: you can't tell a silent e from the letters, and "dose" is an unlikely thing to type in "What are these called?". "lozenges" happens to work because the e follows g, not a sibilant. | — |
+| D7 | `[-]` | `getSettingsOrDefaults` fills in missing fields but not invalid ones — a stored `cycleDays` of null, 0 or 365 passes through untouched, and Milestone 3 would generate that many compartments. Unreachable until Import can write settings. Check the value is 7 or 14 and fall back to the default otherwise, when Import ships. | Milestone 6 |
 
 ---
 
