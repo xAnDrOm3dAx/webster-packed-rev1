@@ -82,7 +82,9 @@ type Medication = {
   // asNeeded / asDirected only:
   directions?: string;            // free text, shown verbatim, never parsed
 
-  goesInPack: boolean;            // false for inhalers, injections, liquids
+  goesInPack: boolean;            // false for inhalers, injections, liquids; also
+                                  // forced false for any medication not on a fixed
+                                  // schedule, tablets included
   notes?: string;                 // "Swallow whole", "with food"
   active: boolean;
   sortOrder: number;
@@ -152,6 +154,26 @@ side: 250 is a plausible dose in ml, never in tablets. Each side's ceiling
 is only checked as the person types, so a value carried across would arrive
 unchecked. Changing form within one side keeps the doses.
 
+### What the form refuses to save
+
+Four rules, all checked when the person tries to save rather than while they
+type. The form will not save:
+
+- a medication with no name;
+- a fixed-schedule medication with all four doses at zero;
+- a medication set to "specific days" with no day chosen;
+- an as-needed or as-directed medication with no directions.
+
+Each failure names the field and says what to do. Nothing is silently dropped,
+corrected, or saved in part.
+
+**The second rule is the one Milestone 3 leans on.** Because a fixed-schedule
+medication cannot be saved with every dose at zero, every fixed medication in
+the list has a dose at at least one time of day — so every fixed medication
+with `goesInPack: true` generates at least one compartment. A medication that
+would produce an empty row of compartments cannot exist, and the packing screen
+never has to handle one.
+
 ---
 
 ## 6. Screens
@@ -164,6 +186,13 @@ unchecked. Changing form within one side keeps the doses.
 6. **Check pack** — verification pass by compartment
 7. **Print list** — static fallback
 8. **Settings** — name, cycle length, slot labels, change PIN, export/import
+
+**Medications are archived, never deleted.** Archiving hides a medication from
+the working list and keeps the record in storage; the same button restores it.
+This is deliberate: a completed pack refers to its medications by id, so
+deleting one would leave pack history pointing at a medication that no longer
+exists. (`repository.ts` still exports a `deleteMedication` function from
+Milestone 1. Nothing in the app calls it.)
 
 ---
 
@@ -258,7 +287,9 @@ The user may be in their seventies or eighties, possibly on a tablet, possibly w
 - No animation on tick beyond a fast (<150ms) state change. Respect `prefers-reduced-motion`.
 - Visible keyboard focus everywhere.
 - Works in portrait and landscape from 375px up.
-- Destructive actions (delete medication, reset pack) always confirm.
+- Destructive actions (reset pack, an import that replaces all data) always
+  confirm. Archiving a medication is not one of them — it is reversible from
+  the same button, so it does not confirm. There is no delete; see section 6.
 
 **Visual direction**
 

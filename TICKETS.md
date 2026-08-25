@@ -96,6 +96,6 @@ None of these block anything. Worth clearing before the Milestone 3 close-out so
 | ✅ | **Milestone 1** — project setup, data types, storage layer with tests. | — |
 | ✅ | **Milestone 2** — medication list, add, edit, archive; all eight awkward real-world cases handled. | — |
 | ✅ | Dose entry redesign — tap-sets model replacing the additive toggle buttons. | — |
-| ✅ | Quantity tap buttons toggle off instead of doing nothing when already selected. | — |
+| ✅ | Dose taps always set the value. Tapping the button already selected does nothing, and Clear is the only way to take a dose away. (An earlier build in this milestone made taps toggle off; that was deliberately reversed — see SPEC §7, "Why the dose picker works this way".) | — |
 | ✅ | Error summary takes focus on a failed save, rather than the cursor jumping past it. | — |
 | ✅ | Contrast raised to 7:1 across the medications list and form. | — |
