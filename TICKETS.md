@@ -10,8 +10,8 @@
 > When a ticket is completed, update its status here in the same commit as the
 > code change.
 
-Last reviewed: 10 Aug 2026
-Branch audited: `milestone-2-dose-entry-revised` (b0a71c7) — 104 tests passing, build and linter clean.
+Last reviewed: 9 Nov 2026
+Branch audited: `main` (2a92767), 169 tests passing, build and linter clean.
 
 **Status key**
 `[ ]` open · `[x]` done · `[~]` in progress · `[?]` waiting on Christopher's decision · `[-]` parked until a later milestone
@@ -38,8 +38,9 @@ Branch audited: `milestone-2-dose-entry-revised` (b0a71c7) — 104 tests passing
 
 | ID | Status | What | Who |
 |---|---|---|---|
+| B8 | `[x]` | **Cells must name the time of day, not just the day.** Do before B1. SPEC §7 said each cell shows "the day and the quantity", so the §5 split dose (3 morning, 2 noon) gave two cells reading "Mon — 3" and "Mon — 2" with nothing saying which compartment each goes in. The Variant A wireframe prompt in `HANDOVER.md` had the same flaw ("one per day"). *SPEC §7 now requires day and time of day on every cell, visible on screen (a row heading counts) and in the cell's accessible name, using the labels from `getSettingsOrDefaults()`. Layout left to B1. Both B1 wireframe prompts now use the split dose as their worked example.* | Claude Code |
 | B1 | `[ ]` | **Settle the packing screen layout.** Two directions to compare: medication card with a row of only its compartments, versus the whole tray shown with the current medication's compartments highlighted. Claude Design, separate conversations, Wireframe template. | Christopher |
-| B2 | `[ ]` | **Close the two spec gaps first.** §7 has no "Check pack" verification screen written up, and §5 treats not-in-tray medications as separate full-screen steps rather than a panel alongside the main flow. Both need settling before Claude Code builds from that section. | Claude / Christopher |
+| B2 | `[x]` | **Close the two spec gaps first.** §7 has no "Check pack" verification screen written up, and §5 treats not-in-tray medications as separate full-screen steps rather than a panel alongside the main flow. Both need settling before Claude Code builds from that section. *Closed 9 Nov 2026, no change needed: both were already in SPEC §7 from the first commit (81eded4), under "Then — check pack" and the collapsed "Not going in the pack" panel. Nothing in the spec describes full-screen steps. Check pack is only one paragraph so far; it gets fleshed out with Milestone 4 (E1).* | Claude / Christopher |
 | B3 | `[ ]` | **Write the Milestone 3 brief.** Anchored on §4, §5 and §7, and must state the per-compartment quantity requirement explicitly. | Claude |
 | B4 | `[ ]` | **Build it.** Pack creation, compartment generation, medication-first flow, fill and unfill, Fill all, progress, resume after closing the browser. | Claude Code |
 | B5 | `[ ]` | **Design review pass**, findings fixed in Claude Code only. | Christopher |
@@ -54,10 +55,10 @@ None of these block anything. Worth clearing before the Milestone 3 close-out so
 
 | ID | Status | What | Who |
 |---|---|---|---|
-| C1 | `[ ]` | **Read the five reconstructed paragraphs** in §7 (lines 215, 224, 226, 230, 234). These are a reconstruction of *why* you decided things, not your own words. From here on they get treated as settled, so 10 minutes of reading now is worth it. | Christopher |
+| C1 | `[ ]` | **Read the five reconstructed paragraphs** in §7 (lines 252, 260, 263, 267, 271 as of 9 Nov 2026; if the file has moved, search for "Reasoning reconstructed"). These are a reconstruction of *why* you decided things, not your own words. From here on they get treated as settled, so 10 minutes of reading now is worth it. | Christopher |
 | C2 | `[ ]` | **Fix the tick-mark contradiction.** §8 requires a tick mark on filled state; §7 records that ticks were removed from dose buttons because they clipped. Harmless today, but Milestone 7's accessibility check will flag it and you'll argue it out again then. | Claude Code proposes, Christopher approves |
 | C3 | `[ ]` | **Note that time-of-day labels are hardcoded.** The dose entry says Morning/Noon/Evening/Night and ignores the editable labels §4 promises. Genuinely a Milestone 6 job — leave a note so it gets found again. | Claude Code |
-| C4 | `[ ]` | **Repoint the code comments.** Four files cite "DOSE ENTRY REVISION 2" notes that only ever existed in a chat window. Anyone reading the code goes hunting for a file that doesn't exist. | Claude Code |
+| C4 | `[ ]` | **Repoint the code comments.** Five files (`DosePicker.tsx`, `DosePicker.test.tsx`, `DoseTimeList.tsx`, `FreeDoseInput.tsx`, `quantity.test.ts`) cite "DOSE ENTRY REVISION 2" notes that only ever existed in a chat window. Anyone reading the code goes hunting for a file that doesn't exist. | Claude Code |
 | C5 | `[ ]` | **Document where the Clear button sits** — it's in the part-tablet row and clears both rows. One sentence in §7 for completeness. | Claude Code |
 | C6 | `[?]` | **Decide whether the silent caps stay silent.** Typing an 11th tablet does nothing at all, with no message. Defensible for a rare case, but it reads as a broken app to someone at a kitchen table. | Christopher |
 | C7 | `[?]` | **Decide whether measure-form units should pluralise.** SPEC.md §5 says inhaler/injection/liquid units are shown verbatim, never re-spelled — its own example is "2 puff", not "2 puffs" (`formatFreeDoseText` in `quantity.ts` passes `pluralise: false` for these forms deliberately). Raised because it reads oddly on screen ("2 injection"); current behaviour matches spec exactly, so this is a spec-change decision, not a bug. | Christopher |
