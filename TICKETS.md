@@ -38,14 +38,41 @@ Branch audited: `main` (2a92767), 169 tests passing, build and linter clean.
 
 | ID | Status | What | Who |
 |---|---|---|---|
-| B8 | `[x]` | **Cells must name the time of day, not just the day.** Do before B1. SPEC §7 said each cell shows "the day and the quantity", so the §5 split dose (3 morning, 2 noon) gave two cells reading "Mon — 3" and "Mon — 2" with nothing saying which compartment each goes in. The Variant A wireframe prompt in `HANDOVER.md` had the same flaw ("one per day"). *SPEC §7 now requires day and time of day on every cell, visible on screen (a row heading counts) and in the cell's accessible name, using the labels from `getSettingsOrDefaults()`. Layout left to B1. Both B1 wireframe prompts now use the split dose as their worked example.* | Claude Code |
-| B1 | `[ ]` | **Settle the packing screen layout.** Two directions to compare: medication card with a row of only its compartments, versus the whole tray shown with the current medication's compartments highlighted. Claude Design, separate conversations, Wireframe template. | Christopher |
+| B8 | `[x]` | **Cells must name the time of day, not just the day.** Do before B1. SPEC §7 said each cell shows "the day and the quantity", so the §5 split dose (3 morning, 2 noon) gave two cells reading "Mon — 3" and "Mon — 2" with nothing saying which compartment each goes in. The Variant A wireframe prompt (now under "B1 wireframe prompts" below) had the same flaw ("one per day"). *SPEC §7 now requires day and time of day on every cell, visible on screen (a row heading counts) and in the cell's accessible name, using the labels from `getSettingsOrDefaults()`. Layout left to B1. Both B1 wireframe prompts now use the split dose as their worked example.* | Claude Code |
+| B9 | `[ ]` | **Archived medications in packs.** Do before B3. SPEC §4 rule 2 says fixed medications with `goesInPack: true` generate entries, but never says only *active* ones, so an archived medication would still get compartments. Done when SPEC says pack creation skips archived medications. | Claude / Christopher |
+| B10 | `[ ]` | **The "Not going in the pack" panel misses medications.** Do before B3. SPEC §7 describes it as "as-needed, as-directed, and non-tablet medications". A fixed tablet with "Goes in the pack" unticked, or an `other` with it unticked, fits none of those and would show nowhere. That undercuts the panel's job of showing nothing was forgotten. §5 also calls it "Not packed — as needed", so the name is inconsistent too. Done when SPEC says exactly which medications the panel lists (every active one that generates no compartment, or a stated alternative) and uses one name for it throughout. | Claude / Christopher |
+| B11 | `[ ]` | **The pack snapshot is incomplete.** Do before B3. `PackEntry` saves name, quantity and unit only. The packing screen also shows brand, purpose and notes, and how a quantity is formatted depends on `form` (½ for tablets versus 0.5 for others, pluralised or verbatim units). Reading those from the live medication lets an edit mid-pack change the pack in progress, which SPEC §4 rule 1 forbids. Needs a data model decision. Done when SPEC §4 says which fields are snapshotted, and where (on each entry or once per medication per pack), and which, if any, are deliberately read live. | Claude / Christopher |
+| B12 | `[ ]` | **Nowhere to store where the person is up to.** Do before B3. SPEC §7 says reopening returns to "the medication that was in progress", but `PackInstance` has no field for it. The first unfilled medication isn't always right, because skipping ahead is allowed. Done when SPEC says what is stored, where, and when it is written. | Claude / Christopher |
+| B13 | `[ ]` | **Starting a pack is undefined.** Do before B3. Open questions: who picks the start date; how `dayIndex` maps to weekdays for "specific days" medications when a pack starts mid-week, and on a 14-day pack; what happens if a pack is already in progress; where "Reset pack" lives (it appears only in §8); and where §5's "note on the Tuesday column" goes on a medication-first screen. Done when SPEC answers each one. | Claude / Christopher |
+| B1 | `[ ]` | **Settle the packing screen layout.** Two directions to compare: medication card with a row of only its compartments, versus the whole tray shown with the current medication's compartments highlighted. Claude Design, separate conversations, Wireframe template. Prompts are under "B1 wireframe prompts" below the table. | Christopher |
 | B2 | `[x]` | **Close the two spec gaps first.** §7 has no "Check pack" verification screen written up, and §5 treats not-in-tray medications as separate full-screen steps rather than a panel alongside the main flow. Both need settling before Claude Code builds from that section. *Closed 9 Nov 2026, no change needed: both were already in SPEC §7 from the first commit (81eded4), under "Then — check pack" and the collapsed "Not going in the pack" panel. Nothing in the spec describes full-screen steps. Check pack is only one paragraph so far; it gets fleshed out with Milestone 4 (E1).* | Claude / Christopher |
-| B3 | `[ ]` | **Write the Milestone 3 brief.** Anchored on §4, §5 and §7, and must state the per-compartment quantity requirement explicitly. | Claude |
+| B3 | `[ ]` | **Write the Milestone 3 brief.** Anchored on §4, §5 and §7, and must state the per-compartment quantity requirement explicitly. It must also cover: what to show the person when a save to storage fails, so no tick is lost silently; and saving "Fill all" and pack creation in one go, so an interruption can't leave them half done. | Claude |
 | B4 | `[ ]` | **Build it.** Pack creation, compartment generation, medication-first flow, fill and unfill, Fill all, progress, resume after closing the browser. | Claude Code |
 | B5 | `[ ]` | **Design review pass**, findings fixed in Claude Code only. | Christopher |
 | B6 | `[ ]` | **Test on the actual tablet** (`npm run dev -- --host`). | Christopher |
-| B7 | `[ ]` | **Close-out and merge** using `CLOSEOUT.md`. | Claude / Christopher |
+| B7 | `[ ]` | **Close-out and merge** using the close-out drift check in `CLAUDE.md`. | Claude / Christopher |
+
+### B1 wireframe prompts
+
+Moved here word for word from the old `HANDOVER.md` §8 so they survive for ticket B1.
+
+Run these in **two separate conversations**, not one. Pasting both into the same thread makes the second read as "change what we just built" rather than "show me a different idea". Use the **Wireframe** template, design system **None**, and the default Sonnet model. Wireframe keeps the output at structure level rather than spending effort on polish that will be rebuilt in Tailwind anyway.
+
+**Variant A, card plus row:**
+
+> Design a mobile-first web screen for "filling" a weekly medication organiser tray, one medication at a time.
+>
+> Show: one medication card (name, brand name, dose amount, a short note like "swallow whole"), and below it tappable cells, one per compartment this medication goes into: one row for each time of day it is taken, with the time of day as the row heading, and one cell per day in that row showing the day and quantity. Use a split dose as the example: 3 tablets in the morning and 2 at noon, every day, so there are two rows (Morning: Mon 3, Tue 3 and so on; Noon: Mon 2, Tue 2 and so on). It must always be clear which day and which time of day each cell belongs to. A "Fill all" button. A "Next medication" button. A slim progress indicator ("4 of 11").
+>
+> Constraints: tap targets at least 56px, compartment cells around 72px. Base text 18px, medication name 24px+. Filled cells must be distinguishable without colour alone: combine a fill, a border change, and a checkmark. High contrast (7:1+). One accent colour for "filled", a deep blue or teal, not red or green, colourblind-safe. No hover-dependent interactions.
+>
+> Mood: calm, high-contrast, generous whitespace, built for an older adult, possibly with a tremor, in ordinary room light. Should feel like a well-made appliance, not a hospital form or a flashy app.
+
+**Variant B, full tray with current medication highlighted:** same prompt, but replace the "Show" paragraph with:
+
+> Show the whole week's tray as a background grid (7 days by dose times), with the compartments belonging to the current medication highlighted and everything else dimmed. Use a split dose as the example: 3 tablets in the morning and 2 at noon, every day, so the Morning and Noon rows are highlighted. Above or beside the grid: the medication name, brand, dose amount, and a short note. A "Fill all" button. A "Next medication" button. A slim progress indicator ("4 of 11").
+
+A shows only the relevant compartments, so it is simpler per screen but never shows the whole tray. B stays closer to how the physical object looks but risks feeling busy at 375px width. That is the thing worth seeing rendered rather than guessing about.
 
 ---
 
@@ -62,6 +89,8 @@ None of these block anything. Worth clearing before the Milestone 3 close-out so
 | C5 | `[ ]` | **Document where the Clear button sits** — it's in the part-tablet row and clears both rows. One sentence in §7 for completeness. | Claude Code |
 | C6 | `[?]` | **Decide whether the silent caps stay silent.** Typing an 11th tablet does nothing at all, with no message. Defensible for a rare case, but it reads as a broken app to someone at a kitchen table. | Christopher |
 | C7 | `[?]` | **Decide whether measure-form units should pluralise.** SPEC.md §5 says inhaler/injection/liquid units are shown verbatim, never re-spelled — its own example is "2 puff", not "2 puffs" (`formatFreeDoseText` in `quantity.ts` passes `pluralise: false` for these forms deliberately). Raised because it reads oddly on screen ("2 injection"); current behaviour matches spec exactly, so this is a spec-change decision, not a bug. | Christopher |
+| C8 | `[?]` | **Non-tablet doses round on display.** `formatFreeDoseText` in `src/lib/quantity.ts` rounds to 2 decimal places, but `FreeDoseInput` accepts more. 0.125 ml stored shows "0.13 ml", and 0.004 shows "0 ml". The spec says the app shows back what was typed. Two ways to fix it: cap input at 2 decimal places, or stop rounding on display. Done when Christopher has picked one and the stored and shown amounts always match. | Christopher |
+| C9 | `[ ]` | **Some selected buttons rely on colour alone.** The Schedule, Frequency and day buttons in `src/pages/MedicationForm.tsx` show selection only by colour (the 1px border just changes colour). §8 says state must not rely on colour alone. The dose buttons already do it properly, with bold text and a thicker border. Done when these buttons show selection the same way. | Claude Code |
 
 ---
 
