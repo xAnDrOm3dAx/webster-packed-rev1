@@ -362,7 +362,7 @@ Audit against section 8. Test on an actual tablet.
 
 Since this is a first run, a few things that help:
 
-- Start by putting this spec in the repo as `SPEC.md`, and create a short `CLAUDE.md` alongside it saying: read SPEC.md before making changes; all storage goes through repository.ts; do not add features not in the spec.
+- Keep this spec in the repo as `SPEC.md`. `CLAUDE.md` alongside it carries the working rules for Claude Code (read SPEC.md first, all storage goes through repository.ts, no features outside the spec, plus how sessions run and how to write).
 - **Do one milestone per session.** Ask for milestone 1, review it, commit, then start a fresh session for milestone 2. Long sessions drift.
 - Commit at the end of each milestone. If a session goes sideways, it's much easier to throw away one milestone than three.
 - Ask explicitly for tests on the section 5 cases. They're the ones that will quietly break.

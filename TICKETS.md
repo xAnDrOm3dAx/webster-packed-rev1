@@ -50,7 +50,7 @@ Branch audited: `main` (2a92767), 169 tests passing, build and linter clean.
 | B4 | `[ ]` | **Build it.** Pack creation, compartment generation, medication-first flow, fill and unfill, Fill all, progress, resume after closing the browser. | Claude Code |
 | B5 | `[ ]` | **Design review pass**, findings fixed in Claude Code only. | Christopher |
 | B6 | `[ ]` | **Test on the actual tablet** (`npm run dev -- --host`). | Christopher |
-| B7 | `[ ]` | **Close-out and merge** using the close-out drift check in `CLAUDE.md`. | Claude / Christopher |
+| B7 | `[ ]` | **Close-out and merge** using the `/closeout` command (`.claude/commands/closeout.md`). | Claude / Christopher |
 
 ### B1 wireframe prompts
 
@@ -85,7 +85,7 @@ None of these block anything. Worth clearing before the Milestone 3 close-out so
 | C1 | `[ ]` | **Read the five reconstructed paragraphs** in §7 (lines 252, 260, 263, 267, 271 as of 9 Nov 2026; if the file has moved, search for "Reasoning reconstructed"). These are a reconstruction of *why* you decided things, not your own words. From here on they get treated as settled, so 10 minutes of reading now is worth it. | Christopher |
 | C2 | `[ ]` | **Fix the tick-mark contradiction.** §8 requires a tick mark on filled state; §7 records that ticks were removed from dose buttons because they clipped. Harmless today, but Milestone 7's accessibility check will flag it and you'll argue it out again then. | Claude Code proposes, Christopher approves |
 | C3 | `[ ]` | **Note that time-of-day labels are hardcoded.** The dose entry says Morning/Noon/Evening/Night and ignores the editable labels §4 promises. Genuinely a Milestone 6 job — leave a note so it gets found again. | Claude Code |
-| C4 | `[ ]` | **Repoint the code comments.** Five files (`DosePicker.tsx`, `DosePicker.test.tsx`, `DoseTimeList.tsx`, `FreeDoseInput.tsx`, `quantity.test.ts`) cite "DOSE ENTRY REVISION 2" notes that only ever existed in a chat window. Anyone reading the code goes hunting for a file that doesn't exist. | Claude Code |
+| C4 | `[ ]` | **Repoint the code comments.** Five files (`DosePicker.tsx`, `DosePicker.test.tsx`, `DoseTimeList.tsx`, `FreeDoseInput.tsx`, `quantity.test.ts`) cite "DOSE ENTRY REVISION 2" notes that only ever existed in a chat window. Anyone reading the code goes hunting for a file that doesn't exist. Also bring the comments in `src/types.ts` in line with SPEC §4: `doses` and `quantity` still say "0.5, 1, 2, 3" rather than the 0 to 10 tablet and 999 non-tablet limits, and `goesInPack` doesn't mention it is forced false for anything not on a fixed schedule. | Claude Code |
 | C5 | `[ ]` | **Document where the Clear button sits** — it's in the part-tablet row and clears both rows. One sentence in §7 for completeness. | Claude Code |
 | C6 | `[?]` | **Decide whether the silent caps stay silent.** Typing an 11th tablet does nothing at all, with no message. Defensible for a rare case, but it reads as a broken app to someone at a kitchen table. | Christopher |
 | C7 | `[?]` | **Decide whether measure-form units should pluralise.** SPEC.md §5 says inhaler/injection/liquid units are shown verbatim, never re-spelled — its own example is "2 puff", not "2 puffs" (`formatFreeDoseText` in `quantity.ts` passes `pluralise: false` for these forms deliberately). Raised because it reads oddly on screen ("2 injection"); current behaviour matches spec exactly, so this is a spec-change decision, not a bug. | Christopher |

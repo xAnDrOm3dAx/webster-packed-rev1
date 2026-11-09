@@ -40,14 +40,7 @@ npm run lint             run oxlint
 
 ## Close-out drift check
 
-Run at the end of each milestone, before merging. Report only: don't edit `SPEC.md` or `CLAUDE.md` during the check, Christopher reviews the list first.
-
-1. List every behaviour, data shape or component changed, added or removed in the milestone, even small ones.
-2. For each, search `SPEC.md` and `CLAUDE.md` for anything still describing the old behaviour. Give file, section heading and line number.
-3. For each match: what it says now, what it should say, and whether it's a small wording fix or a bigger structural change.
-4. Flag anything changed that the spec doesn't describe at all. That's a gap for Christopher to decide whether to document.
-5. Flag any reasoning that exists only in a chat session and not in the repo.
-6. Keep it short and in plain English.
+At the end of each milestone, before merging, run `/closeout <milestone> <branch>` (defined in `.claude/commands/closeout.md`).
 
 ## Business context
 

@@ -2,7 +2,7 @@
 
 A guided packing session for a Webster pack (weekly medication tray). See [SPEC.md](./SPEC.md) for the full build spec.
 
-Requires Node 20.19+ or 22.12+.
+Requires Node 24 (LTS). This project uses [fnm](https://github.com/Schniz/fnm) to manage Node.
 
 ```bash
 npm install
