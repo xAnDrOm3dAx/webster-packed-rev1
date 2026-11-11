@@ -10,8 +10,8 @@
 > When a ticket is completed, update its status here in the same commit as the
 > code change.
 
-Last reviewed: 9 Nov 2026
-Branch audited: `main` (2a92767), 169 tests passing, build and linter clean.
+Last reviewed: 11 Nov 2026
+Branch audited: `main` (8c54bab), 169 tests passing, build and linter clean. New findings from this review are in section F.
 
 **Status key**
 `[ ]` open · `[x]` done · `[~]` in progress · `[?]` waiting on Christopher's decision · `[-]` parked until a later milestone
@@ -116,6 +116,22 @@ None of these block anything. Worth clearing before the Milestone 3 close-out so
 | E2 | `[ ]` | **Milestone 5** — Print list. |
 | E3 | `[ ]` | **Milestone 6** — PIN, export, import, Settings screen. |
 | E4 | `[ ]` | **Milestone 7** — Accessibility pass against §8, tested on a real tablet. |
+
+---
+
+## F. Found in the 11 Nov 2026 review
+
+Added as open items only. None has been started.
+
+| ID | Status | What | Who |
+|---|---|---|---|
+| F1 | `[ ]` | **Saving fails on the tablet over the home network.** Do before B6. `makeId()` in `src/storage/repository.ts` calls `crypto.randomUUID()`, which browsers only provide on secure pages (https, or localhost). `npm run dev -- --host` serves plain http to the tablet, so "Add medication" does nothing there: no medication saved, no message. Confirmed by switching the function off in the browser and pressing save. Pack creation in Milestone 3 would fail the same way. Done when ids are made in a way that works on plain http and a test covers it. Note for Milestone 6: the PIN's SHA-256 hash (SPEC §9) uses `crypto.subtle`, which has the same restriction. | Claude Code |
+| F2 | `[ ]` | **A failed save on the medication screens is silent.** If storage is full or blocked, or anything else throws while saving, the form just sits there and the Archive button does nothing, with no message. B3 already covers this for the packing screen. This ticket covers the medication form and list. Done when a failed save shows a plain message that stays on screen. | Claude Code |
+| F3 | `[ ]` | **Refreshing a page will break once the site is deployed.** The app uses real addresses like `/medications`. A static host (Vercel, Netlify) only knows about the home page unless told to send every address to the app, and the repo has no such setting. Refreshing or bookmarking any screen would give a "not found" page, which matters for "resume after closing the browser". There is also no screen for a mistyped address: it shows a blank page. Do before the first deploy. | Claude Code |
+| F4 | `[ ]` | **The Home screen belongs to no milestone.** SPEC §6 lists Home ("resume or start a pack; shortcuts to medications and settings") but §12 never says which milestone builds it. Today it is a placeholder with one link. Milestone 3 needs somewhere to start and resume a pack. Decide alongside B13. Done when SPEC §12 names the milestone. | Claude / Christopher |
+| F5 | `[ ]` | **Pack history grows without limit.** Every compartment of every pack is kept forever in one list, and that whole list is rewritten on every tick. Browser storage holds roughly 5 MB. Rough estimate, not measured: a weekly pack of about ten medications adds around 20 KB, so the limit is a few years away, sooner if B11 adds more to each compartment record. Worth weighing when deciding B11, and when Milestone 4 builds history. | Claude / Christopher |
+| F6 | `[ ]` | **"Archive this medication" on the edit screen throws away unsaved edits** without saying so. Change a dose, tap Archive, and the change is lost. Done when SPEC says what should happen (save first, or warn) and the screen does it. | Claude / Christopher |
+| F7 | `[ ]` | **Small tidy-ups.** (a) The medications list draws its "No medications yet" message for an instant before the saved list appears, because the list is loaded after the first draw. Found by reading the code, not seen on screen. (b) Two test files call `localStorage.clear()` directly (`medicationForm.test.ts`, `MedicationForm.test.tsx`) instead of `clearAll()` from the storage module. (c) `MedicationsList.tsx` has no tests. | Claude Code |
 
 ---
 
